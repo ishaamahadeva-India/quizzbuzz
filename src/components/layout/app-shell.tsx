@@ -11,6 +11,7 @@ import {
 import { MainNav } from './main-nav';
 import { Header } from './header';
 import { Footer } from './footer';
+import { MobileFooterNav } from './mobile-footer-nav';
 import { BookHeart } from 'lucide-react';
 
 
@@ -32,8 +33,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Sidebar>
         <SidebarInset className="flex flex-col min-h-screen">
           <Header />
-          <main className="flex-1 p-4 md:p-8 lg:p-12">{children}</main>
+          <main className="flex-1 p-4 md:p-8 lg:p-12 pb-20 md:pb-4">{children}</main>
           <Footer />
+          <MobileFooterNav />
         </SidebarInset>
       </SidebarProvider>
   );
