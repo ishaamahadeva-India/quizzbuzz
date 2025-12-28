@@ -32,7 +32,36 @@ export function useMatchEvents(matchId: string) {
   const eventsRef = firestore
     ? collection(firestore, 'fantasy_matches', matchId, 'events')
     : null;
-  const { data: events } = useCollection(eventsRef);
+  const { data: eventsData } = useCollection(eventsRef);
+  
+  // Transform events data to CricketEvent type
+  const events = useMemo(() => {
+    if (!eventsData) return [];
+    return eventsData.map((eventData) => {
+      const data = eventData as any;
+      return {
+        id: eventData.id,
+        title: data.title || '',
+        description: data.description || '',
+        eventType: data.eventType,
+        matchId: data.matchId || matchId,
+        innings: data.innings,
+        status: data.status || 'upcoming',
+        startTime: data.startTime?.toDate?.() || data.startTime,
+        endTime: data.endTime?.toDate?.() || data.endTime,
+        lockTime: data.lockTime?.toDate?.() || data.lockTime,
+        points: data.points || 0,
+        difficultyLevel: data.difficultyLevel,
+        options: data.options,
+        rules: data.rules,
+        result: data.result,
+        applicableFormats: data.applicableFormats,
+        category: data.category,
+        createdAt: data.createdAt?.toDate?.() || data.createdAt || new Date(),
+        updatedAt: data.updatedAt?.toDate?.() || data.updatedAt || new Date(),
+      } as CricketEvent;
+    });
+  }, [eventsData, matchId]);
 
   // Set up real-time listener for match state updates
   useEffect(() => {
