@@ -1,4 +1,13 @@
 
+export type CricketEventCategory = 
+    | 'Powerplay Events'
+    | 'Batting Events'
+    | 'Bowling Events'
+    | 'Fielding Events'
+    | 'Match Outcome'
+    | 'Innings Events'
+    | 'Special Events'
+    | 'Player Performance';
 
 export type Movie = {
     id: string;
@@ -419,6 +428,7 @@ export type CricketEvent = {
     rules?: string[];
     result?: EventResult;
     applicableFormats?: ('T20' | 'ODI' | 'Test')[]; // Which formats this event applies to
+    category?: CricketEventCategory; // Category for grouping events
     createdAt: Date;
     updatedAt: Date;
 }
