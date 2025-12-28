@@ -51,11 +51,33 @@ type NewCricketEvent = {
  */
 export function addCricketMatch(firestore: Firestore, matchData: NewFantasyMatch) {
   const matchesCollection = collection(firestore, 'fantasy_matches');
-  const docToSave = {
-    ...matchData,
+  
+  // Remove undefined values to avoid Firestore errors
+  const docToSave: Record<string, any> = {
+    matchName: matchData.matchName,
+    format: matchData.format,
+    teams: matchData.teams,
+    team1: matchData.team1,
+    team2: matchData.team2,
+    startTime: matchData.startTime,
+    status: matchData.status,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
+
+  // Only include optional fields if they are defined
+  if (matchData.venue !== undefined) {
+    docToSave.venue = matchData.venue;
+  }
+  if (matchData.description !== undefined) {
+    docToSave.description = matchData.description;
+  }
+  if (matchData.entryFee !== undefined) {
+    docToSave.entryFee = matchData.entryFee;
+  }
+  if (matchData.maxParticipants !== undefined) {
+    docToSave.maxParticipants = matchData.maxParticipants;
+  }
 
   return addDoc(matchesCollection, docToSave)
     .catch(async (serverError) => {
@@ -78,10 +100,19 @@ export function updateCricketMatch(
   matchData: Partial<NewFantasyMatch>
 ) {
   const matchDocRef = doc(firestore, 'fantasy_matches', matchId);
-  const docToUpdate = {
-    ...matchData,
+  
+  // Remove undefined values to avoid Firestore errors
+  const docToUpdate: Record<string, any> = {
     updatedAt: serverTimestamp(),
   };
+
+  // Only include fields that are defined (not undefined)
+  Object.keys(matchData).forEach((key) => {
+    const value = (matchData as any)[key];
+    if (value !== undefined) {
+      docToUpdate[key] = value;
+    }
+  });
 
   return updateDoc(matchDocRef, docToUpdate)
     .catch(async (serverError) => {
