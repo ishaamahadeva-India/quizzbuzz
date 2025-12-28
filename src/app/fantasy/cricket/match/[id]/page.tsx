@@ -638,12 +638,12 @@ function SecondInningsSelectionView({ onLockSelections, players }: { onLockSelec
 }
 
 
-function LeaderboardView() {
+function LeaderboardView({ match }: { match: FantasyMatch }) {
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="font-headline">Match Leaderboard</CardTitle>
-                <CardDescription>Live rankings for the {matchDetails.title} match.</CardDescription>
+                <CardDescription>Live rankings for the {match.matchName || `${match.team1} vs ${match.team2}`} match.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-2">
@@ -682,17 +682,31 @@ export default function CricketMatchPage() {
   const [currentScore, setCurrentScore] = useState(110);
   const [currentStreak, setCurrentStreak] = useState(0);
 
-  const playersQuery = firestore ? collection(firestore, 'cricketers') : null;
-  const { data: players, isLoading } = useCollection(playersQuery);
+  // Fetch match from Firestore
+  const matchRef = firestore ? doc(firestore, 'fantasy_matches', id) : null;
+  const { data: match, isLoading: matchLoading } = useDoc(matchRef);
 
-  if (id !== 'live-match-1') {
+  const playersQuery = firestore ? collection(firestore, 'cricketers') : null;
+  const { data: players, isLoading: playersLoading } = useCollection(playersQuery);
+
+  // Show loading state
+  if (matchLoading || playersLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Skeleton className="h-full w-full" />
+      </div>
+    );
+  }
+
+  // Show 404 if match doesn't exist
+  if (!match) {
     return notFound();
   }
 
-  if (isLoading || !players) {
+  if (!players) {
     return (
       <div className="flex items-center justify-center h-screen">
-          <Skeleton className="h-full w-full" />
+        <Skeleton className="h-full w-full" />
       </div>
     );
   }
@@ -735,10 +749,10 @@ export default function CricketMatchPage() {
                     </Link>
                 </Button>
                  <h1 className="text-3xl font-bold md:text-4xl font-headline">
-                    {matchDetails.title}
+                    {match.matchName || `${match.team1} vs ${match.team2}`}
                 </h1>
                 <p className="mt-1 text-muted-foreground">
-                    {matchDetails.series}
+                    {match.description || `${match.format} Match`}
                 </p>
             </div>
             {/* <SocialShare
@@ -771,7 +785,7 @@ export default function CricketMatchPage() {
                 {renderGameContent()}
             </TabsContent>
             <TabsContent value="leaderboard" className="mt-6">
-                <LeaderboardView />
+                <LeaderboardView match={match} />
             </TabsContent>
         </Tabs>
       
