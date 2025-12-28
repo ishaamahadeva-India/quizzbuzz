@@ -199,6 +199,411 @@ export type CricketEventCategory =
   | 'Player Performance';
 
 /**
+ * Match phases for sequential event unlocking
+ * Events unlock as the match progresses through these phases
+ * 
+ * Phases are organized by format:
+ * - T20/IPL: 20 overs per innings
+ * - ODI: 50 overs per innings (2 powerplays)
+ * - Test: 90 overs per day (3 sessions per day)
+ */
+export type MatchPhase = 
+  // ========== COMMON PHASES (All Formats) ==========
+  | 'Pre-Match'
+  | 'Innings Break'
+  | 'Post-Match'
+  
+  // ========== T20/IPL PHASES (20 Overs Per Innings) ==========
+  | 'First Innings - Powerplay (Overs 1-6)'
+  | 'First Innings - Middle Overs (Overs 7-15)'
+  | 'First Innings - Death Overs (Overs 16-20)'
+  | 'Second Innings - Powerplay (Overs 1-6)'
+  | 'Second Innings - Middle Overs (Overs 7-15)'
+  | 'Second Innings - Death Overs (Overs 16-20)'
+  
+  // ========== ODI PHASES (50 Overs Per Innings, 2 Powerplays) ==========
+  // First Innings ODI Phases
+  | 'First Innings - Powerplay 1 (Overs 1-10)'
+  | 'First Innings - Middle Overs 1 (Overs 11-30)'
+  | 'First Innings - Powerplay 2 (Overs 31-40)'
+  | 'First Innings - Death Overs (Overs 41-50)'
+  // Second Innings ODI Phases
+  | 'Second Innings - Powerplay 1 (Overs 1-10)'
+  | 'Second Innings - Middle Overs 1 (Overs 11-30)'
+  | 'Second Innings - Powerplay 2 (Overs 31-40)'
+  | 'Second Innings - Death Overs (Overs 41-50)'
+  
+  // ========== TEST MATCH PHASES (90 Overs Per Day, 3 Sessions) ==========
+  // Day 1 Sessions
+  | 'Day 1 - Session 1 (Overs 1-30)'
+  | 'Day 1 - Session 2 (Overs 31-60)'
+  | 'Day 1 - Session 3 (Overs 61-90)'
+  // Day 2 Sessions
+  | 'Day 2 - Session 1 (Overs 1-30)'
+  | 'Day 2 - Session 2 (Overs 31-60)'
+  | 'Day 2 - Session 3 (Overs 61-90)'
+  // Day 3 Sessions
+  | 'Day 3 - Session 1 (Overs 1-30)'
+  | 'Day 3 - Session 2 (Overs 31-60)'
+  | 'Day 3 - Session 3 (Overs 61-90)'
+  // Day 4 Sessions
+  | 'Day 4 - Session 1 (Overs 1-30)'
+  | 'Day 4 - Session 2 (Overs 31-60)'
+  | 'Day 4 - Session 3 (Overs 61-90)'
+  // Day 5 Sessions
+  | 'Day 5 - Session 1 (Overs 1-30)'
+  | 'Day 5 - Session 2 (Overs 31-60)'
+  | 'Day 5 - Session 3 (Overs 61-90)';
+
+/**
+ * Match state information for determining event unlocking
+ */
+export type MatchState = {
+  format: 'T20' | 'ODI' | 'Test' | 'IPL';
+  currentOver: number; // Current over number (0-based, 0 = pre-match)
+  currentInnings: 1 | 2; // Current innings (1 or 2)
+  matchStatus: 'upcoming' | 'live' | 'completed';
+  currentDay?: number; // For Test matches (1-5)
+  isInningsBreak?: boolean; // Whether currently in innings break
+};
+
+/**
+ * Determines the current match phase based on match state
+ */
+export function getCurrentMatchPhase(state: MatchState): MatchPhase {
+  const { format, currentOver, currentInnings, isInningsBreak, currentDay } = state;
+
+  // Pre-match phase
+  if (currentOver === 0 && state.matchStatus === 'upcoming') {
+    return 'Pre-Match';
+  }
+
+  // Innings break
+  if (isInningsBreak) {
+    return 'Innings Break';
+  }
+
+  // Post-match
+  if (state.matchStatus === 'completed') {
+    return 'Post-Match';
+  }
+
+  // T20/IPL phases
+  if (format === 'T20' || format === 'IPL') {
+    if (currentInnings === 1) {
+      if (currentOver >= 0 && currentOver <= 6) {
+        return 'First Innings - Powerplay (Overs 1-6)';
+      } else if (currentOver > 6 && currentOver <= 15) {
+        return 'First Innings - Middle Overs (Overs 7-15)';
+      } else if (currentOver > 15 && currentOver <= 20) {
+        return 'First Innings - Death Overs (Overs 16-20)';
+      }
+    } else if (currentInnings === 2) {
+      // For second innings, adjust over number (subtract first innings overs)
+      const secondInningsOver = currentOver - 20;
+      if (secondInningsOver >= 0 && secondInningsOver <= 6) {
+        return 'Second Innings - Powerplay (Overs 1-6)';
+      } else if (secondInningsOver > 6 && secondInningsOver <= 15) {
+        return 'Second Innings - Middle Overs (Overs 7-15)';
+      } else if (secondInningsOver > 15 && secondInningsOver <= 20) {
+        return 'Second Innings - Death Overs (Overs 16-20)';
+      }
+    }
+  }
+
+  // ODI phases
+  if (format === 'ODI') {
+    if (currentInnings === 1) {
+      if (currentOver >= 0 && currentOver <= 10) {
+        return 'First Innings - Powerplay 1 (Overs 1-10)';
+      } else if (currentOver > 10 && currentOver <= 30) {
+        return 'First Innings - Middle Overs 1 (Overs 11-30)';
+      } else if (currentOver > 30 && currentOver <= 40) {
+        return 'First Innings - Powerplay 2 (Overs 31-40)';
+      } else if (currentOver > 40 && currentOver <= 50) {
+        return 'First Innings - Death Overs (Overs 41-50)';
+      }
+    } else if (currentInnings === 2) {
+      // For second innings, adjust over number (subtract first innings overs)
+      const secondInningsOver = currentOver - 50;
+      if (secondInningsOver >= 0 && secondInningsOver <= 10) {
+        return 'Second Innings - Powerplay 1 (Overs 1-10)';
+      } else if (secondInningsOver > 10 && secondInningsOver <= 30) {
+        return 'Second Innings - Middle Overs 1 (Overs 11-30)';
+      } else if (secondInningsOver > 30 && secondInningsOver <= 40) {
+        return 'Second Innings - Powerplay 2 (Overs 31-40)';
+      } else if (secondInningsOver > 40 && secondInningsOver <= 50) {
+        return 'Second Innings - Death Overs (Overs 41-50)';
+      }
+    }
+  }
+
+  // Test match phases (session-based)
+  if (format === 'Test') {
+    const day = currentDay || 1;
+    const dayOver = ((day - 1) * 90) + currentOver;
+    
+    if (dayOver >= 0 && dayOver <= 30) {
+      return `Day ${day} - Session 1 (Overs 1-30)` as MatchPhase;
+    } else if (dayOver > 30 && dayOver <= 60) {
+      return `Day ${day} - Session 2 (Overs 31-60)` as MatchPhase;
+    } else if (dayOver > 60 && dayOver <= 90) {
+      return `Day ${day} - Session 3 (Overs 61-90)` as MatchPhase;
+    }
+  }
+
+  // Default to Pre-Match if phase cannot be determined
+  return 'Pre-Match';
+}
+
+/**
+ * Checks if an event should be unlocked based on current match state
+ */
+export function isEventUnlocked(
+  eventTemplate: typeof CRICKET_EVENT_TEMPLATES[number],
+  state: MatchState
+): boolean {
+  const { format, currentOver, currentInnings } = state;
+  const currentPhase = getCurrentMatchPhase(state);
+
+  // Check if event applies to current format
+  if (eventTemplate.applicableFormats && eventTemplate.applicableFormats.length > 0) {
+    if (!eventTemplate.applicableFormats.includes(format)) {
+      return false;
+    }
+  }
+
+  // Check if event matches current phase
+  if (eventTemplate.matchPhase && eventTemplate.matchPhase !== currentPhase) {
+    return false;
+  }
+
+  // Check if event matches current innings
+  if (eventTemplate.defaultInnings && eventTemplate.defaultInnings !== currentInnings) {
+    return false;
+  }
+
+  // Check unlock after over threshold
+  if (eventTemplate.unlockAfterOver !== undefined) {
+    // For second innings events, adjust the threshold
+    let adjustedThreshold = eventTemplate.unlockAfterOver;
+    if (currentInnings === 2) {
+      if (format === 'T20' || format === 'IPL') {
+        adjustedThreshold += 20; // Add first innings overs
+      } else if (format === 'ODI') {
+        adjustedThreshold += 50; // Add first innings overs
+      }
+    }
+    
+    if (currentOver < adjustedThreshold) {
+      return false;
+    }
+  }
+
+  // Pre-match events are always unlocked before match starts
+  if (eventTemplate.matchPhase === 'Pre-Match' && state.matchStatus === 'upcoming') {
+    return true;
+  }
+
+  // Post-match events unlock after match completes
+  if (eventTemplate.matchPhase === 'Post-Match' && state.matchStatus === 'completed') {
+    return true;
+  }
+
+  // Innings break events unlock during innings break
+  if (eventTemplate.matchPhase === 'Innings Break' && state.isInningsBreak) {
+    return true;
+  }
+
+  return true;
+}
+
+/**
+ * Gets all events that should be unlocked for the current match state
+ */
+export function getUnlockedEvents(
+  state: MatchState
+): Array<typeof CRICKET_EVENT_TEMPLATES[number]> {
+  return CRICKET_EVENT_TEMPLATES.filter((template) => isEventUnlocked(template, state));
+}
+
+/**
+ * Gets events for a specific match phase
+ */
+export function getEventsForPhase(phase: MatchPhase): Array<typeof CRICKET_EVENT_TEMPLATES[number]> {
+  return CRICKET_EVENT_TEMPLATES.filter((template) => template.matchPhase === phase);
+}
+
+/**
+ * Gets events that should be locked (phase has passed)
+ */
+export function getLockedEvents(
+  state: MatchState
+): Array<typeof CRICKET_EVENT_TEMPLATES[number]> {
+  const currentPhase = getCurrentMatchPhase(state);
+  const { format, currentOver, currentInnings } = state;
+
+  return CRICKET_EVENT_TEMPLATES.filter((template) => {
+    // Pre-match events lock after match starts (unless they're post-match events)
+    if (template.matchPhase === 'Pre-Match' && state.matchStatus === 'live') {
+      return true;
+    }
+
+    // Innings break events lock when second innings starts
+    if (template.matchPhase === 'Innings Break' && currentInnings === 2 && currentOver > 0) {
+      return true;
+    }
+
+    // Phase-specific locking logic
+    if (template.matchPhase && template.matchPhase !== currentPhase) {
+      // Check if the phase has passed
+      if (format === 'T20' || format === 'IPL') {
+        if (currentInnings === 1) {
+          if (template.matchPhase === 'First Innings - Powerplay (Overs 1-6)' && currentOver > 6) {
+            return true;
+          }
+          if (template.matchPhase === 'First Innings - Middle Overs (Overs 7-15)' && currentOver > 15) {
+            return true;
+          }
+          if (template.matchPhase === 'First Innings - Death Overs (Overs 16-20)' && currentOver > 20) {
+            return true;
+          }
+        }
+      }
+
+      // Similar logic for ODI and Test matches...
+    }
+
+    return false;
+  });
+}
+
+/**
+ * Determines the lock over for an event based on its phase
+ */
+export function getEventLockOver(
+  eventTemplate: typeof CRICKET_EVENT_TEMPLATES[number],
+  format: 'T20' | 'ODI' | 'Test' | 'IPL'
+): number | null {
+  if (!eventTemplate.matchPhase) {
+    return null;
+  }
+
+  // T20/IPL lock overs
+  if (format === 'T20' || format === 'IPL') {
+    switch (eventTemplate.matchPhase) {
+      case 'First Innings - Powerplay (Overs 1-6)':
+        return 6;
+      case 'First Innings - Middle Overs (Overs 7-15)':
+        return 15;
+      case 'First Innings - Death Overs (Overs 16-20)':
+        return 20;
+      case 'Second Innings - Powerplay (Overs 1-6)':
+        return 26; // 20 (first innings) + 6
+      case 'Second Innings - Middle Overs (Overs 7-15)':
+        return 35; // 20 + 15
+      case 'Second Innings - Death Overs (Overs 16-20)':
+        return 40; // 20 + 20
+      default:
+        return null;
+    }
+  }
+
+  // ODI lock overs
+  if (format === 'ODI') {
+    switch (eventTemplate.matchPhase) {
+      case 'First Innings - Powerplay 1 (Overs 1-10)':
+        return 10;
+      case 'First Innings - Middle Overs 1 (Overs 11-30)':
+        return 30;
+      case 'First Innings - Powerplay 2 (Overs 31-40)':
+        return 40;
+      case 'First Innings - Death Overs (Overs 41-50)':
+        return 50;
+      case 'Second Innings - Powerplay 1 (Overs 1-10)':
+        return 60; // 50 + 10
+      case 'Second Innings - Middle Overs 1 (Overs 11-30)':
+        return 80; // 50 + 30
+      case 'Second Innings - Powerplay 2 (Overs 31-40)':
+        return 90; // 50 + 40
+      case 'Second Innings - Death Overs (Overs 41-50)':
+        return 100; // 50 + 50
+      default:
+        return null;
+    }
+  }
+
+  // Test match lock overs (session-based)
+  if (format === 'Test') {
+    // Extract day and session from phase name
+    const phaseMatch = eventTemplate.matchPhase.match(/Day (\d+) - Session (\d+)/);
+    if (phaseMatch) {
+      const day = parseInt(phaseMatch[1]);
+      const session = parseInt(phaseMatch[2]);
+      const baseOver = (day - 1) * 90;
+      
+      switch (session) {
+        case 1:
+          return baseOver + 30;
+        case 2:
+          return baseOver + 60;
+        case 3:
+          return baseOver + 90;
+        default:
+          return null;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Determines the appropriate status for an event based on current match state
+ */
+export function getEventStatus(
+  eventTemplate: typeof CRICKET_EVENT_TEMPLATES[number],
+  state: MatchState
+): 'upcoming' | 'live' | 'locked' | 'completed' {
+  const { format, currentOver, matchStatus } = state;
+
+  // Completed events stay completed
+  // (This would be set when results are entered)
+
+  // Pre-match events
+  if (eventTemplate.matchPhase === 'Pre-Match') {
+    if (matchStatus === 'upcoming') {
+      return 'live'; // Available for prediction
+    } else if (matchStatus === 'live' || matchStatus === 'completed') {
+      return 'locked'; // Locked after match starts
+    }
+  }
+
+  // Post-match events
+  if (eventTemplate.matchPhase === 'Post-Match') {
+    if (matchStatus === 'completed') {
+      return 'live'; // Available after match ends
+    } else {
+      return 'upcoming'; // Not yet available
+    }
+  }
+
+  // Check if event should be unlocked
+  if (!isEventUnlocked(eventTemplate, state)) {
+    return 'upcoming'; // Not yet unlocked
+  }
+
+  // Check if event should be locked
+  const lockOver = getEventLockOver(eventTemplate, format);
+  if (lockOver !== null && currentOver > lockOver) {
+    return 'locked'; // Phase has passed
+  }
+
+  // Event is currently live
+  return 'live';
+}
+
+/**
  * Predefined cricket event templates (30+ events)
  */
 export const CRICKET_EVENT_TEMPLATES: Array<{
@@ -211,46 +616,65 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
   defaultRules?: string[];
   applicableFormats?: ('T20' | 'ODI' | 'Test' | 'IPL')[];
   category?: CricketEventCategory; // Category for grouping
+  matchPhase?: MatchPhase; // Phase when this event unlocks/becomes active
+  defaultInnings?: 1 | 2; // Which innings this event applies to
+  unlockAfterOver?: number; // Unlock after this over (for sequential events)
 }> = [
-  // ========== POWERPLAY EVENTS ==========
+  // ========== FIRST INNINGS - POWERPLAY EVENTS (OVERS 1-6) ==========
   {
-    title: 'Powerplay Runs (First 6 Overs)',
-    description: 'Predict the total runs scored in the powerplay (first 6 overs).',
+    title: 'First Innings Powerplay Runs (Overs 1-6)',
+    description: 'Predict the total runs scored in the first innings powerplay (overs 1-6).',
     eventType: 'powerplay_runs',
     defaultPoints: 50,
     difficultyLevel: 'medium',
     category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
     defaultOptions: ['0-30', '31-40', '41-50', '51-60', '61+'],
+    defaultRules: ['Unlocks at match start. Locks after over 6.'],
     applicableFormats: ['T20', 'ODI'],
   },
   {
-    title: 'Powerplay Wickets',
-    description: 'Predict the number of wickets lost in the powerplay.',
+    title: 'First Innings Powerplay Wickets',
+    description: 'Predict the number of wickets lost in first innings powerplay.',
     eventType: 'powerplay_wickets',
     defaultPoints: 40,
     difficultyLevel: 'easy',
     category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
     defaultOptions: ['0', '1', '2', '3', '4+'],
+    defaultRules: ['Unlocks at match start. Locks after over 6.'],
     applicableFormats: ['T20', 'ODI'],
   },
   {
-    title: 'Powerplay Boundaries',
-    description: 'Predict the total number of boundaries (4s) in powerplay.',
+    title: 'First Innings Powerplay Boundaries',
+    description: 'Predict the total number of boundaries (4s) in first innings powerplay.',
     eventType: 'powerplay_boundaries',
     defaultPoints: 35,
     difficultyLevel: 'easy',
     category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
     defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9+'],
+    defaultRules: ['Unlocks at match start. Locks after over 6.'],
     applicableFormats: ['T20', 'ODI'],
   },
   {
-    title: 'Powerplay Sixes',
-    description: 'Predict the total number of sixes in powerplay.',
+    title: 'First Innings Powerplay Sixes',
+    description: 'Predict the total number of sixes in first innings powerplay.',
     eventType: 'powerplay_sixes',
     defaultPoints: 45,
     difficultyLevel: 'medium',
     category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
     defaultOptions: ['0', '1-2', '3-4', '5-6', '7+'],
+    defaultRules: ['Unlocks at match start. Locks after over 6.'],
     applicableFormats: ['T20', 'ODI'],
   },
   
@@ -401,7 +825,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultOptions: ['Yes', 'No'],
   },
   
-  // ========== MATCH OUTCOME EVENTS ==========
+  // ========== PRE-MATCH EVENTS ==========
   {
     title: 'Toss Winner',
     description: 'Predict which team will win the toss.',
@@ -409,7 +833,9 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 20,
     difficultyLevel: 'easy',
     category: 'Match Outcome',
+    matchPhase: 'Pre-Match',
     defaultOptions: ['Team 1', 'Team 2'],
+    defaultRules: ['Locked before toss.'],
   },
   {
     title: 'Toss Decision',
@@ -418,7 +844,9 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 25,
     difficultyLevel: 'easy',
     category: 'Match Outcome',
+    matchPhase: 'Pre-Match',
     defaultOptions: ['Bat', 'Bowl', 'Field'],
+    defaultRules: ['Locked before toss.'],
   },
   {
     title: 'Match Winner',
@@ -500,7 +928,10 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 70,
     difficultyLevel: 'hard',
     category: 'Innings Events',
+    matchPhase: 'Pre-Match',
+    defaultInnings: 1,
     defaultOptions: ['0-100', '101-150', '151-200', '201-250', '251+'],
+    defaultRules: ['Unlocks at match start. Locks after first innings ends.'],
   },
   {
     title: 'Second Innings Score',
@@ -509,7 +940,11 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 70,
     difficultyLevel: 'hard',
     category: 'Innings Events',
+    matchPhase: 'Innings Break',
+    defaultInnings: 2,
+    unlockAfterOver: 20,
     defaultOptions: ['0-100', '101-150', '151-200', '201-250', '251+'],
+    defaultRules: ['Unlocks during innings break. Locks after second innings ends.'],
   },
   {
     title: 'First Innings Wickets',
@@ -518,7 +953,10 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 50,
     difficultyLevel: 'medium',
     category: 'Innings Events',
+    matchPhase: 'Pre-Match',
+    defaultInnings: 1,
     defaultOptions: ['0-3', '4-6', '7-9', '10 (All Out)'],
+    defaultRules: ['Unlocks at match start. Locks after first innings ends.'],
   },
   {
     title: 'Second Innings Wickets',
@@ -527,10 +965,14 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 50,
     difficultyLevel: 'medium',
     category: 'Innings Events',
+    matchPhase: 'Innings Break',
+    defaultInnings: 2,
+    unlockAfterOver: 20,
     defaultOptions: ['0-3', '4-6', '7-9', '10 (All Out)'],
+    defaultRules: ['Unlocks during innings break. Locks after second innings ends.'],
   },
   
-  // ========== TEST MATCH SPECIFIC ==========
+  // ========== TEST MATCH SPECIFIC SEQUENTIAL EVENTS ==========
   {
     title: 'First Innings Lead',
     description: 'Predict which team will have the first innings lead (Test matches).',
@@ -538,7 +980,10 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 60,
     difficultyLevel: 'medium',
     category: 'Innings Events',
+    matchPhase: 'Innings Break',
+    unlockAfterOver: 90,
     defaultOptions: ['Team 1', 'Team 2', 'No Lead'],
+    defaultRules: ['Unlocks after first innings ends. Locks after second innings ends.'],
     applicableFormats: ['Test'],
   },
   {
@@ -548,7 +993,10 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 70,
     difficultyLevel: 'hard',
     category: 'Special Events',
+    matchPhase: 'Innings Break',
+    unlockAfterOver: 90,
     defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks after first innings ends. Locks after second innings starts.'],
     applicableFormats: ['Test'],
   },
   {
@@ -558,7 +1006,39 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 65,
     difficultyLevel: 'medium',
     category: 'Special Events',
+    matchPhase: 'First Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 1,
+    unlockAfterOver: 50,
     defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks after over 50. Locks after first innings ends.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'First Innings Score After Session 1 (Test)',
+    description: 'Predict the score after first session (30 overs) in first innings (Test).',
+    eventType: 'first_innings_score',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Innings Events',
+    matchPhase: 'First Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 1,
+    unlockAfterOver: 20,
+    defaultOptions: ['0-80', '81-120', '121-160', '161-200', '201+'],
+    defaultRules: ['Unlocks after over 20. Locks after over 30.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'First Innings Score After Session 2 (Test)',
+    description: 'Predict the score after second session (60 overs) in first innings (Test).',
+    eventType: 'first_innings_score',
+    defaultPoints: 70,
+    difficultyLevel: 'hard',
+    category: 'Innings Events',
+    matchPhase: 'First Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 1,
+    unlockAfterOver: 50,
+    defaultOptions: ['0-150', '151-220', '221-290', '291-360', '361+'],
+    defaultRules: ['Unlocks after over 50. Locks after over 60.'],
     applicableFormats: ['Test'],
   },
   {
@@ -580,7 +1060,35 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9+'],
   },
   
-  // ========== ODI SPECIFIC ==========
+  // ========== ODI SPECIFIC SEQUENTIAL EVENTS ==========
+  {
+    title: 'First Innings Score After Over 25 (ODI)',
+    description: 'Predict the total score after 25 overs in first innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 70,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 1,
+    unlockAfterOver: 20,
+    defaultOptions: ['0-100', '101-130', '131-160', '161-190', '191+'],
+    defaultRules: ['Unlocks after over 20. Locks after over 25.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'First Innings Score After Over 40 (ODI)',
+    description: 'Predict the total score after 40 overs in first innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 80,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Death Overs (Overs 16-20)',
+    defaultInnings: 1,
+    unlockAfterOver: 35,
+    defaultOptions: ['0-200', '201-250', '251-300', '301-350', '351+'],
+    defaultRules: ['Unlocks after over 35. Locks after over 40.'],
+    applicableFormats: ['ODI'],
+  },
   {
     title: '300+ Score',
     description: 'Predict if any team will score 300+ runs (ODI).',
@@ -588,7 +1096,9 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 60,
     difficultyLevel: 'medium',
     category: 'Batting Events',
+    matchPhase: 'Pre-Match',
     defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks at match start. Locks after first innings ends.'],
     applicableFormats: ['ODI'],
   },
   {
@@ -598,7 +1108,9 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 100,
     difficultyLevel: 'hard',
     category: 'Batting Events',
+    matchPhase: 'Pre-Match',
     defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks at match start. Locks after first innings ends.'],
     applicableFormats: ['ODI'],
   },
   {
@@ -608,7 +1120,10 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 50,
     difficultyLevel: 'medium',
     category: 'Match Outcome',
+    matchPhase: 'Innings Break',
+    unlockAfterOver: 50,
     defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks during innings break. Locks after match ends.'],
     applicableFormats: ['ODI', 'T20'],
   },
   
@@ -1091,8 +1606,936 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 50,
     difficultyLevel: 'medium',
     category: 'Special Events',
+    matchPhase: 'First Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 1,
+    unlockAfterOver: 6,
     defaultOptions: ['Over 7-9', 'Over 10-12', 'Over 13-15', 'Over 16-18', 'Not Taken'],
+    defaultRules: ['Unlocks after over 6. Locks after over 15.'],
     applicableFormats: ['IPL'],
+  },
+  
+  // ========== SEQUENTIAL/LIVE EVENTS FOR FIRST INNINGS ==========
+  // Powerplay Phase (Overs 1-6)
+  {
+    title: 'First Innings Powerplay Score After Over 3',
+    description: 'Predict the score after 3 overs in first innings.',
+    eventType: 'powerplay_runs',
+    defaultPoints: 35,
+    difficultyLevel: 'easy',
+    category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0-15', '16-25', '26-35', '36-45', '46+'],
+    defaultRules: ['Unlocks at match start. Locks after over 3.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  {
+    title: 'First Innings Powerplay Score After Over 6',
+    description: 'Predict the score after 6 overs (end of powerplay) in first innings.',
+    eventType: 'powerplay_runs',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0-30', '31-40', '41-50', '51-60', '61+'],
+    defaultRules: ['Unlocks at match start. Locks after over 6.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  {
+    title: 'First Innings Wickets After Powerplay',
+    description: 'Predict wickets lost after first innings powerplay (after over 6).',
+    eventType: 'powerplay_wickets',
+    defaultPoints: 40,
+    difficultyLevel: 'easy',
+    category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0', '1', '2', '3', '4+'],
+    defaultRules: ['Unlocks at match start. Locks after over 6.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  
+  // Middle Overs Phase (Overs 7-15)
+  {
+    title: 'First Innings Score After Over 10',
+    description: 'Predict the total score after 10 overs in first innings.',
+    eventType: 'total_runs',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 1,
+    unlockAfterOver: 6,
+    defaultOptions: ['0-50', '51-70', '71-90', '91-110', '111+'],
+    defaultRules: ['Unlocks after over 6. Locks after over 10.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  {
+    title: 'First Innings Score After Over 15',
+    description: 'Predict the total score after 15 overs in first innings.',
+    eventType: 'total_runs',
+    defaultPoints: 70,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 1,
+    unlockAfterOver: 6,
+    defaultOptions: ['0-80', '81-100', '101-120', '121-140', '141+'],
+    defaultRules: ['Unlocks after over 6. Locks after over 15.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  {
+    title: 'First Innings Wickets After Over 10',
+    description: 'Predict wickets lost after 10 overs in first innings.',
+    eventType: 'total_wickets',
+    defaultPoints: 45,
+    difficultyLevel: 'easy',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 1,
+    unlockAfterOver: 6,
+    defaultOptions: ['0-1', '2', '3', '4', '5+'],
+    defaultRules: ['Unlocks after over 6. Locks after over 10.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  
+  // Death Overs Phase (Overs 16-20)
+  {
+    title: 'First Innings Score After Over 18',
+    description: 'Predict the total score after 18 overs in first innings.',
+    eventType: 'total_runs',
+    defaultPoints: 75,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Death Overs (Overs 16-20)',
+    defaultInnings: 1,
+    unlockAfterOver: 15,
+    defaultOptions: ['0-100', '101-130', '131-160', '161-190', '191+'],
+    defaultRules: ['Unlocks after over 15. Locks after over 18.'],
+    applicableFormats: ['T20', 'IPL'],
+  },
+  {
+    title: 'First Innings Final Score Range',
+    description: 'Predict the final score range for first innings.',
+    eventType: 'first_innings_score',
+    defaultPoints: 100,
+    difficultyLevel: 'hard',
+    category: 'Innings Events',
+    matchPhase: 'First Innings - Death Overs (Overs 16-20)',
+    defaultInnings: 1,
+    unlockAfterOver: 15,
+    defaultOptions: ['0-100', '101-150', '151-200', '201-250', '251+'],
+    defaultRules: ['Unlocks after over 15. Locks after first innings ends.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  {
+    title: 'First Innings Wickets Lost',
+    description: 'Predict total wickets lost in first innings.',
+    eventType: 'first_innings_wickets',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Innings Events',
+    matchPhase: 'First Innings - Death Overs (Overs 16-20)',
+    defaultInnings: 1,
+    unlockAfterOver: 15,
+    defaultOptions: ['0-3', '4-6', '7-9', '10 (All Out)'],
+    defaultRules: ['Unlocks after over 15. Locks after first innings ends.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  
+  // ========== INNINGS BREAK EVENTS ==========
+  {
+    title: 'Target Prediction',
+    description: 'Predict if the target will be chased successfully.',
+    eventType: 'chase_successful',
+    defaultPoints: 80,
+    difficultyLevel: 'medium',
+    category: 'Match Outcome',
+    matchPhase: 'Innings Break',
+    unlockAfterOver: 20,
+    defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks during innings break. Locks at start of second innings.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  {
+    title: 'Required Run Rate After Powerplay',
+    description: 'Predict the required run rate after second innings powerplay (if chasing).',
+    eventType: 'chase_successful',
+    defaultPoints: 65,
+    difficultyLevel: 'medium',
+    category: 'Match Outcome',
+    matchPhase: 'Innings Break',
+    unlockAfterOver: 20,
+    defaultOptions: ['Below 6', '6-8', '8-10', '10-12', '12+'],
+    defaultRules: ['Unlocks during innings break. Locks after second innings over 6.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  
+  // ========== SECOND INNINGS - POWERPLAY EVENTS (OVERS 1-6) ==========
+  {
+    title: 'Second Innings Powerplay Runs (Overs 1-6)',
+    description: 'Predict the total runs scored in the second innings powerplay (overs 1-6).',
+    eventType: 'powerplay_runs',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Powerplay Events',
+    matchPhase: 'Second Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 2,
+    unlockAfterOver: 20,
+    defaultOptions: ['0-30', '31-40', '41-50', '51-60', '61+'],
+    defaultRules: ['Unlocks at start of second innings. Locks after over 6 of second innings.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  {
+    title: 'Second Innings Powerplay Wickets',
+    description: 'Predict the number of wickets lost in second innings powerplay.',
+    eventType: 'powerplay_wickets',
+    defaultPoints: 40,
+    difficultyLevel: 'easy',
+    category: 'Powerplay Events',
+    matchPhase: 'Second Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 2,
+    unlockAfterOver: 20,
+    defaultOptions: ['0', '1', '2', '3', '4+'],
+    defaultRules: ['Unlocks at start of second innings. Locks after over 6 of second innings.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  {
+    title: 'Second Innings Powerplay Score After Over 3',
+    description: 'Predict the score after 3 overs in second innings.',
+    eventType: 'powerplay_runs',
+    defaultPoints: 35,
+    difficultyLevel: 'easy',
+    category: 'Powerplay Events',
+    matchPhase: 'Second Innings - Powerplay (Overs 1-6)',
+    defaultInnings: 2,
+    unlockAfterOver: 20,
+    defaultOptions: ['0-15', '16-25', '26-35', '36-45', '46+'],
+    defaultRules: ['Unlocks at start of second innings. Locks after over 3 of second innings.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  
+  // ========== SECOND INNINGS - MIDDLE OVERS (OVERS 7-15) ==========
+  {
+    title: 'Second Innings Score After Over 10',
+    description: 'Predict the total score after 10 overs in second innings.',
+    eventType: 'total_runs',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Second Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 2,
+    unlockAfterOver: 26,
+    defaultOptions: ['0-50', '51-70', '71-90', '91-110', '111+'],
+    defaultRules: ['Unlocks after over 6 of second innings. Locks after over 10 of second innings.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  {
+    title: 'Second Innings Score After Over 15',
+    description: 'Predict the total score after 15 overs in second innings.',
+    eventType: 'total_runs',
+    defaultPoints: 70,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Second Innings - Middle Overs (Overs 7-15)',
+    defaultInnings: 2,
+    unlockAfterOver: 26,
+    defaultOptions: ['0-80', '81-100', '101-120', '121-140', '141+'],
+    defaultRules: ['Unlocks after over 6 of second innings. Locks after over 15 of second innings.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  
+  // ========== SECOND INNINGS - DEATH OVERS (OVERS 16-20) ==========
+  {
+    title: 'Second Innings Score After Over 18',
+    description: 'Predict the total score after 18 overs in second innings.',
+    eventType: 'total_runs',
+    defaultPoints: 75,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'Second Innings - Death Overs (Overs 16-20)',
+    defaultInnings: 2,
+    unlockAfterOver: 35,
+    defaultOptions: ['0-100', '101-130', '131-160', '161-190', '191+'],
+    defaultRules: ['Unlocks after over 15 of second innings. Locks after over 18 of second innings.'],
+    applicableFormats: ['T20', 'IPL'],
+  },
+  {
+    title: 'Second Innings Final Score Range',
+    description: 'Predict the final score range for second innings.',
+    eventType: 'second_innings_score',
+    defaultPoints: 100,
+    difficultyLevel: 'hard',
+    category: 'Innings Events',
+    matchPhase: 'Second Innings - Death Overs (Overs 16-20)',
+    defaultInnings: 2,
+    unlockAfterOver: 35,
+    defaultOptions: ['0-100', '101-150', '151-200', '201-250', '251+'],
+    defaultRules: ['Unlocks after over 15 of second innings. Locks after second innings ends.'],
+    applicableFormats: ['T20', 'ODI', 'IPL'],
+  },
+  
+  // ========== ODI SPECIFIC EVENTS - FIRST INNINGS ==========
+  // ========== FIRST INNINGS - POWERPLAY 1 (OVERS 1-10) ==========
+  {
+    title: 'ODI First Innings Powerplay 1 Total Runs (Overs 1-10)',
+    description: 'Predict the total runs scored in the first innings powerplay 1 (overs 1-10) in ODI.',
+    eventType: 'powerplay_runs',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay 1 (Overs 1-10)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0-40', '41-50', '51-60', '61-70', '71+'],
+    defaultRules: ['Unlocks at match start. Locks after over 10.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Powerplay 1 Wickets',
+    description: 'Predict the number of wickets lost in first innings powerplay 1 (overs 1-10) in ODI.',
+    eventType: 'powerplay_wickets',
+    defaultPoints: 45,
+    difficultyLevel: 'easy',
+    category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay 1 (Overs 1-10)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0', '1', '2', '3', '4+'],
+    defaultRules: ['Unlocks at match start. Locks after over 10.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Score After Over 5',
+    description: 'Predict the total score after 5 overs in first innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 40,
+    difficultyLevel: 'easy',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Powerplay 1 (Overs 1-10)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0-20', '21-30', '31-40', '41-50', '51+'],
+    defaultRules: ['Unlocks at match start. Locks after over 5.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Score After Over 10',
+    description: 'Predict the total score after 10 overs in first innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 55,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Powerplay 1 (Overs 1-10)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0-40', '41-50', '51-60', '61-70', '71+'],
+    defaultRules: ['Unlocks at match start. Locks after over 10.'],
+    applicableFormats: ['ODI'],
+  },
+  
+  // ========== FIRST INNINGS - MIDDLE OVERS 1 (OVERS 11-30) ==========
+  {
+    title: 'ODI First Innings Score After Over 25',
+    description: 'Predict the total score after 25 overs in first innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 70,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 10,
+    defaultOptions: ['0-100', '101-130', '131-160', '161-190', '191+'],
+    defaultRules: ['Unlocks after over 10. Locks after over 25.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Score After Over 30',
+    description: 'Predict the total score after 30 overs in first innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 75,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 10,
+    defaultOptions: ['0-120', '121-150', '151-180', '181-210', '211+'],
+    defaultRules: ['Unlocks after over 10. Locks after over 30.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Wickets After Over 25',
+    description: 'Predict wickets lost after 25 overs in first innings (ODI).',
+    eventType: 'total_wickets',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 10,
+    defaultOptions: ['0-2', '3', '4', '5', '6+'],
+    defaultRules: ['Unlocks after over 10. Locks after over 25.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Wickets After Over 30',
+    description: 'Predict wickets lost after 30 overs in first innings (ODI).',
+    eventType: 'total_wickets',
+    defaultPoints: 55,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 10,
+    defaultOptions: ['0-2', '3', '4', '5', '6+'],
+    defaultRules: ['Unlocks after over 10. Locks after over 30.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First 100 Partnership Over',
+    description: 'Predict which over range will see the first 100-run partnership (ODI).',
+    eventType: 'first_100_partnership',
+    defaultPoints: 75,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 10,
+    defaultOptions: ['Over 1-20', 'Over 21-30', 'Over 31+', 'No 100 partnership'],
+    defaultRules: ['Unlocks after over 10. Locks after over 30.'],
+    applicableFormats: ['ODI'],
+  },
+  
+  // ========== FIRST INNINGS - POWERPLAY 2 (OVERS 31-40) ==========
+  {
+    title: 'ODI First Innings Powerplay 2 Total Runs (Overs 31-40)',
+    description: 'Predict the total runs scored in the first innings powerplay 2 (overs 31-40) in ODI.',
+    eventType: 'powerplay_runs',
+    defaultPoints: 65,
+    difficultyLevel: 'medium',
+    category: 'Powerplay Events',
+    matchPhase: 'First Innings - Powerplay 2 (Overs 31-40)',
+    defaultInnings: 1,
+    unlockAfterOver: 30,
+    defaultOptions: ['0-40', '41-50', '51-60', '61-70', '71+'],
+    defaultRules: ['Unlocks after over 30. Locks after over 40.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Score After Over 35',
+    description: 'Predict the total score after 35 overs in first innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 80,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Powerplay 2 (Overs 31-40)',
+    defaultInnings: 1,
+    unlockAfterOver: 30,
+    defaultOptions: ['0-150', '151-200', '201-250', '251-300', '301+'],
+    defaultRules: ['Unlocks after over 30. Locks after over 35.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Score After Over 40',
+    description: 'Predict the total score after 40 overs in first innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 85,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Powerplay 2 (Overs 31-40)',
+    defaultInnings: 1,
+    unlockAfterOver: 30,
+    defaultOptions: ['0-200', '201-250', '251-300', '301-350', '351+'],
+    defaultRules: ['Unlocks after over 30. Locks after over 40.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Wickets After Over 40',
+    description: 'Predict wickets lost after 40 overs in first innings (ODI).',
+    eventType: 'total_wickets',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Powerplay 2 (Overs 31-40)',
+    defaultInnings: 1,
+    unlockAfterOver: 30,
+    defaultOptions: ['0-3', '4', '5', '6', '7+'],
+    defaultRules: ['Unlocks after over 30. Locks after over 40.'],
+    applicableFormats: ['ODI'],
+  },
+  
+  // ========== FIRST INNINGS - DEATH OVERS (OVERS 41-50) ==========
+  {
+    title: 'ODI First Innings Score After Over 45',
+    description: 'Predict the total score after 45 overs in first innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 90,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'First Innings - Death Overs (Overs 41-50)',
+    defaultInnings: 1,
+    unlockAfterOver: 40,
+    defaultOptions: ['0-250', '251-300', '301-350', '351-400', '401+'],
+    defaultRules: ['Unlocks after over 40. Locks after over 45.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI Final First Innings Score',
+    description: 'Predict the final score range for first innings (ODI).',
+    eventType: 'first_innings_score',
+    defaultPoints: 100,
+    difficultyLevel: 'hard',
+    category: 'Innings Events',
+    matchPhase: 'First Innings - Death Overs (Overs 41-50)',
+    defaultInnings: 1,
+    unlockAfterOver: 40,
+    defaultOptions: ['0-200', '201-250', '251-300', '301-350', '351-400', '401+'],
+    defaultRules: ['Unlocks after over 40. Locks after first innings ends.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI First Innings Wickets Lost',
+    description: 'Predict total wickets lost in first innings (ODI).',
+    eventType: 'first_innings_wickets',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Innings Events',
+    matchPhase: 'First Innings - Death Overs (Overs 41-50)',
+    defaultInnings: 1,
+    unlockAfterOver: 40,
+    defaultOptions: ['0-3', '4-6', '7-9', '10 (All Out)'],
+    defaultRules: ['Unlocks after over 40. Locks after first innings ends.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI 300+ Score Achieved',
+    description: 'Predict if any team will score 300+ runs in an innings (ODI).',
+    eventType: '300_plus_score',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Pre-Match',
+    defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks at match start. Locks after first innings ends.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI 400+ Score Achieved',
+    description: 'Predict if any team will score 400+ runs in an innings (ODI).',
+    eventType: '400_plus_score',
+    defaultPoints: 100,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'Pre-Match',
+    defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks at match start. Locks after first innings ends.'],
+    applicableFormats: ['ODI'],
+  },
+  
+  // ========== ODI SPECIFIC EVENTS - SECOND INNINGS ==========
+  // ========== SECOND INNINGS - POWERPLAY 1 (OVERS 1-10) ==========
+  {
+    title: 'ODI Second Innings Powerplay 1 Total Runs (Overs 1-10)',
+    description: 'Predict the total runs scored in the second innings powerplay 1 (overs 1-10) in ODI.',
+    eventType: 'powerplay_runs',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Powerplay Events',
+    matchPhase: 'Second Innings - Powerplay 1 (Overs 1-10)',
+    defaultInnings: 2,
+    unlockAfterOver: 50,
+    defaultOptions: ['0-40', '41-50', '51-60', '61-70', '71+'],
+    defaultRules: ['Unlocks at start of second innings. Locks after over 10 of second innings.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI Second Innings Required Run Rate After Over 10',
+    description: 'Predict the required run rate after 10 overs in second innings (ODI).',
+    eventType: 'chase_successful',
+    defaultPoints: 65,
+    difficultyLevel: 'medium',
+    category: 'Match Outcome',
+    matchPhase: 'Second Innings - Powerplay 1 (Overs 1-10)',
+    defaultInnings: 2,
+    unlockAfterOver: 50,
+    defaultOptions: ['Below 5', '5-6', '6-7', '7-8', '8+'],
+    defaultRules: ['Unlocks at start of second innings. Locks after over 10 of second innings.'],
+    applicableFormats: ['ODI'],
+  },
+  
+  // ========== SECOND INNINGS - MIDDLE OVERS 1 (OVERS 11-30) ==========
+  {
+    title: 'ODI Second Innings Score After Over 25',
+    description: 'Predict the total score after 25 overs in second innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 70,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Second Innings - Middle Overs 1 (Overs 11-30)',
+    defaultInnings: 2,
+    unlockAfterOver: 60,
+    defaultOptions: ['0-100', '101-130', '131-160', '161-190', '191+'],
+    defaultRules: ['Unlocks after over 10 of second innings. Locks after over 25 of second innings.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI Second Innings Required Run Rate After Over 30',
+    description: 'Predict the required run rate after 30 overs in second innings (ODI).',
+    eventType: 'chase_successful',
+    defaultPoints: 75,
+    difficultyLevel: 'medium',
+    category: 'Match Outcome',
+    matchPhase: 'Second Innings - Middle Overs 1 (Overs 11-30)',
+    defaultInnings: 2,
+    unlockAfterOver: 60,
+    defaultOptions: ['Below 5', '5-6', '6-7', '7-8', '8+'],
+    defaultRules: ['Unlocks after over 10 of second innings. Locks after over 30 of second innings.'],
+    applicableFormats: ['ODI'],
+  },
+  
+  // ========== SECOND INNINGS - POWERPLAY 2 (OVERS 31-40) ==========
+  {
+    title: 'ODI Second Innings Powerplay 2 Total Runs (Overs 31-40)',
+    description: 'Predict the total runs scored in the second innings powerplay 2 (overs 31-40) in ODI.',
+    eventType: 'powerplay_runs',
+    defaultPoints: 65,
+    difficultyLevel: 'medium',
+    category: 'Powerplay Events',
+    matchPhase: 'Second Innings - Powerplay 2 (Overs 31-40)',
+    defaultInnings: 2,
+    unlockAfterOver: 80,
+    defaultOptions: ['0-40', '41-50', '51-60', '61-70', '71+'],
+    defaultRules: ['Unlocks after over 30 of second innings. Locks after over 40 of second innings.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI Second Innings Score After Over 40',
+    description: 'Predict the total score after 40 overs in second innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 85,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'Second Innings - Powerplay 2 (Overs 31-40)',
+    defaultInnings: 2,
+    unlockAfterOver: 80,
+    defaultOptions: ['0-200', '201-250', '251-300', '301-350', '351+'],
+    defaultRules: ['Unlocks after over 30 of second innings. Locks after over 40 of second innings.'],
+    applicableFormats: ['ODI'],
+  },
+  
+  // ========== SECOND INNINGS - DEATH OVERS (OVERS 41-50) ==========
+  {
+    title: 'ODI Second Innings Score After Over 45',
+    description: 'Predict the total score after 45 overs in second innings (ODI).',
+    eventType: 'total_runs',
+    defaultPoints: 90,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'Second Innings - Death Overs (Overs 41-50)',
+    defaultInnings: 2,
+    unlockAfterOver: 90,
+    defaultOptions: ['0-250', '251-300', '301-350', '351-400', '401+'],
+    defaultRules: ['Unlocks after over 40 of second innings. Locks after over 45 of second innings.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI Final Second Innings Score',
+    description: 'Predict the final score range for second innings (ODI).',
+    eventType: 'second_innings_score',
+    defaultPoints: 100,
+    difficultyLevel: 'hard',
+    category: 'Innings Events',
+    matchPhase: 'Second Innings - Death Overs (Overs 41-50)',
+    defaultInnings: 2,
+    unlockAfterOver: 90,
+    defaultOptions: ['0-200', '201-250', '251-300', '301-350', '351-400', '401+'],
+    defaultRules: ['Unlocks after over 40 of second innings. Locks after second innings ends.'],
+    applicableFormats: ['ODI'],
+  },
+  {
+    title: 'ODI Chase Successful',
+    description: 'Predict if the chasing team will successfully chase the target (ODI).',
+    eventType: 'chase_successful',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Match Outcome',
+    matchPhase: 'Innings Break',
+    unlockAfterOver: 50,
+    defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks during innings break. Locks after match ends.'],
+    applicableFormats: ['ODI'],
+  },
+  
+  // ========== TEST MATCH SPECIFIC EVENTS ==========
+  // ========== PRE-MATCH TEST EVENTS ==========
+  {
+    title: 'Test Match First Innings Lead',
+    description: 'Predict which team will have the first innings lead (Test matches).',
+    eventType: 'first_innings_lead',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Innings Events',
+    matchPhase: 'Pre-Match',
+    defaultOptions: ['Team 1', 'Team 2', 'No Lead'],
+    defaultRules: ['Unlocks at match start. Locks after second innings ends.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Match Follow-On Enforced',
+    description: 'Predict if there will be a follow-on enforced (Test matches).',
+    eventType: 'follow_on',
+    defaultPoints: 70,
+    difficultyLevel: 'hard',
+    category: 'Special Events',
+    matchPhase: 'Pre-Match',
+    defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks at match start. Locks after first innings ends.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Match Total Centuries',
+    description: 'Predict the total number of centuries in the match (Test).',
+    eventType: 'century_count',
+    defaultPoints: 75,
+    difficultyLevel: 'hard',
+    category: 'Player Performance',
+    matchPhase: 'Pre-Match',
+    defaultOptions: ['0', '1', '2', '3', '4+'],
+    defaultRules: ['Unlocks at match start. Locks after match ends.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Match Total Fifties',
+    description: 'Predict the total number of fifties (50+) in the match (Test).',
+    eventType: 'fifty_count',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Player Performance',
+    matchPhase: 'Pre-Match',
+    defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9+'],
+    defaultRules: ['Unlocks at match start. Locks after match ends.'],
+    applicableFormats: ['Test'],
+  },
+  
+  // ========== DAY 1 - SESSION 1 (OVERS 1-30) ==========
+  {
+    title: 'Test Day 1 Session 1 - Score After Over 15',
+    description: 'Predict the score after 15 overs on Day 1 Session 1 (Test).',
+    eventType: 'total_runs',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 1 (Overs 1-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0-40', '41-60', '61-80', '81-100', '101+'],
+    defaultRules: ['Unlocks at match start. Locks after over 15.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 1 - Score After Over 30 (Lunch)',
+    description: 'Predict the score after 30 overs on Day 1 Session 1 - Lunch (Test).',
+    eventType: 'total_runs',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 1 (Overs 1-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0-80', '81-120', '121-160', '161-200', '201+'],
+    defaultRules: ['Unlocks at match start. Locks after over 30 (Lunch).'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 1 - Wickets After Session',
+    description: 'Predict wickets lost after Day 1 Session 1 (Test).',
+    eventType: 'total_wickets',
+    defaultPoints: 45,
+    difficultyLevel: 'easy',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 1 (Overs 1-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['0-1', '2', '3', '4', '5+'],
+    defaultRules: ['Unlocks at match start. Locks after over 30.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 1 - First Wicket Over',
+    description: 'Predict which over range will see the first wicket fall (Test Day 1 Session 1).',
+    eventType: 'first_wicket',
+    defaultPoints: 40,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 1 (Overs 1-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['Over 1-10', 'Over 11-20', 'Over 21-30', 'No Wicket'],
+    defaultRules: ['Unlocks at match start. Locks after over 30.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 1 - First 50 Partnership Over',
+    description: 'Predict which over range will see the first 50-run partnership (Test Day 1 Session 1).',
+    eventType: 'first_50_partnership',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 1 (Overs 1-30)',
+    defaultInnings: 1,
+    unlockAfterOver: 0,
+    defaultOptions: ['Over 1-15', 'Over 16-30', 'Over 31+', 'No 50 partnership'],
+    defaultRules: ['Unlocks at match start. Locks after over 30.'],
+    applicableFormats: ['Test'],
+  },
+  
+  // ========== DAY 1 - SESSION 2 (OVERS 31-60) ==========
+  {
+    title: 'Test Day 1 Session 2 - Score After Over 45',
+    description: 'Predict the score after 45 overs on Day 1 Session 2 (Test).',
+    eventType: 'total_runs',
+    defaultPoints: 70,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 2 (Overs 31-60)',
+    defaultInnings: 1,
+    unlockAfterOver: 30,
+    defaultOptions: ['0-120', '121-180', '181-240', '241-300', '301+'],
+    defaultRules: ['Unlocks after over 30. Locks after over 45.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 2 - Score After Over 60 (Tea)',
+    description: 'Predict the score after 60 overs on Day 1 Session 2 - Tea (Test).',
+    eventType: 'total_runs',
+    defaultPoints: 75,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 2 (Overs 31-60)',
+    defaultInnings: 1,
+    unlockAfterOver: 30,
+    defaultOptions: ['0-150', '151-220', '221-290', '291-360', '361+'],
+    defaultRules: ['Unlocks after over 30. Locks after over 60 (Tea).'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 2 - Wickets After Session',
+    description: 'Predict wickets lost after Day 1 Session 2 (Test).',
+    eventType: 'total_wickets',
+    defaultPoints: 55,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 2 (Overs 31-60)',
+    defaultInnings: 1,
+    unlockAfterOver: 30,
+    defaultOptions: ['0-2', '3', '4', '5', '6+'],
+    defaultRules: ['Unlocks after over 30. Locks after over 60.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 2 - First Century Over',
+    description: 'Predict which over range will see the first century (Test Day 1 Session 2).',
+    eventType: 'highest_individual_score',
+    defaultPoints: 80,
+    difficultyLevel: 'hard',
+    category: 'Player Performance',
+    matchPhase: 'Day 1 - Session 2 (Overs 31-60)',
+    defaultInnings: 1,
+    unlockAfterOver: 30,
+    defaultOptions: ['Over 1-40', 'Over 41-60', 'Over 61+', 'No Century'],
+    defaultRules: ['Unlocks after over 30. Locks after over 60.'],
+    applicableFormats: ['Test'],
+  },
+  
+  // ========== DAY 1 - SESSION 3 (OVERS 61-90) ==========
+  {
+    title: 'Test Day 1 Session 3 - Score After Over 75',
+    description: 'Predict the score after 75 overs on Day 1 Session 3 (Test).',
+    eventType: 'total_runs',
+    defaultPoints: 80,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 3 (Overs 61-90)',
+    defaultInnings: 1,
+    unlockAfterOver: 60,
+    defaultOptions: ['0-200', '201-280', '281-360', '361-440', '441+'],
+    defaultRules: ['Unlocks after over 60. Locks after over 75.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 3 - Score After Over 90 (Stumps)',
+    description: 'Predict the score after 90 overs on Day 1 Session 3 - Stumps (Test).',
+    eventType: 'total_runs',
+    defaultPoints: 85,
+    difficultyLevel: 'hard',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 3 (Overs 61-90)',
+    defaultInnings: 1,
+    unlockAfterOver: 60,
+    defaultOptions: ['0-250', '251-350', '351-450', '451-550', '551+'],
+    defaultRules: ['Unlocks after over 60. Locks after over 90 (Stumps Day 1).'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 3 - Wickets After Day 1',
+    description: 'Predict wickets lost after Day 1 (Test).',
+    eventType: 'total_wickets',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Batting Events',
+    matchPhase: 'Day 1 - Session 3 (Overs 61-90)',
+    defaultInnings: 1,
+    unlockAfterOver: 60,
+    defaultOptions: ['0-2', '3', '4', '5', '6+'],
+    defaultRules: ['Unlocks after over 60. Locks after over 90.'],
+    applicableFormats: ['Test'],
+  },
+  {
+    title: 'Test Day 1 Session 3 - First Innings Score After Day 1',
+    description: 'Predict the first innings score after Day 1 (Test).',
+    eventType: 'first_innings_score',
+    defaultPoints: 90,
+    difficultyLevel: 'hard',
+    category: 'Innings Events',
+    matchPhase: 'Day 1 - Session 3 (Overs 61-90)',
+    defaultInnings: 1,
+    unlockAfterOver: 60,
+    defaultOptions: ['0-200', '201-300', '301-400', '401-500', '501+'],
+    defaultRules: ['Unlocks after over 60. Locks after over 90.'],
+    applicableFormats: ['Test'],
+  },
+  
+  // ========== TEST DECLARATION EVENT ==========
+  {
+    title: 'Test Match Declaration',
+    description: 'Predict if any team will declare their innings (Test matches).',
+    eventType: 'declaration',
+    defaultPoints: 65,
+    difficultyLevel: 'medium',
+    category: 'Special Events',
+    matchPhase: 'Day 1 - Session 2 (Overs 31-60)',
+    defaultInnings: 1,
+    unlockAfterOver: 50,
+    defaultOptions: ['Yes', 'No'],
+    defaultRules: ['Unlocks after over 50. Locks after first innings ends.'],
+    applicableFormats: ['Test'],
+  },
+  
+  // ========== POST-MATCH EVENTS ==========
+  {
+    title: 'Match Winner',
+    description: 'Predict which team will win the match.',
+    eventType: 'match_winner',
+    defaultPoints: 100,
+    difficultyLevel: 'medium',
+    category: 'Match Outcome',
+    matchPhase: 'Post-Match',
+    defaultOptions: ['Team 1', 'Team 2', 'Tie', 'No Result'],
+    defaultRules: ['Unlocks at match start. Locks after match ends.'],
   },
 ];
 
