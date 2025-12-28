@@ -25,11 +25,23 @@ type TeamData = {
  */
 export function addTeam(firestore: Firestore, data: TeamData) {
   const teamsCollection = collection(firestore, 'teams');
-  return addDoc(teamsCollection, data).catch(async (serverError) => {
+  
+  // Remove undefined values - Firestore doesn't allow undefined
+  const cleanData: Record<string, any> = {
+    name: data.name,
+    type: data.type,
+  };
+  
+  // Only include logoUrl if it's defined and not empty
+  if (data.logoUrl !== undefined && data.logoUrl !== null && data.logoUrl.trim() !== '') {
+    cleanData.logoUrl = data.logoUrl;
+  }
+  
+  return addDoc(teamsCollection, cleanData).catch(async (serverError) => {
     const permissionError = new FirestorePermissionError({
       path: teamsCollection.path,
       operation: 'create',
-      requestResourceData: data,
+      requestResourceData: cleanData,
     });
     errorEmitter.emit('permission-error', permissionError);
     throw serverError;
@@ -48,11 +60,24 @@ export function updateTeam(
   data: Partial<TeamData>
 ) {
   const teamDocRef = doc(firestore, 'teams', teamId);
-  return updateDoc(teamDocRef, data).catch(async (serverError) => {
+  
+  // Remove undefined values - Firestore doesn't allow undefined
+  const cleanData: Record<string, any> = {};
+  
+  // Only include fields that are defined
+  if (data.name !== undefined) cleanData.name = data.name;
+  if (data.type !== undefined) cleanData.type = data.type;
+  
+  // Only include logoUrl if it's defined and not empty
+  if (data.logoUrl !== undefined && data.logoUrl !== null && data.logoUrl.trim() !== '') {
+    cleanData.logoUrl = data.logoUrl;
+  }
+  
+  return updateDoc(teamDocRef, cleanData).catch(async (serverError) => {
     const permissionError = new FirestorePermissionError({
       path: teamDocRef.path,
       operation: 'update',
-      requestResourceData: data,
+      requestResourceData: cleanData,
     });
     errorEmitter.emit('permission-error', permissionError);
     throw serverError;

@@ -25,11 +25,24 @@ type CricketerData = {
  */
 export function addCricketer(firestore: Firestore, data: CricketerData) {
   const cricketersCollection = collection(firestore, 'cricketers');
-  return addDoc(cricketersCollection, data).catch(async (serverError) => {
+  
+  // Remove undefined values - Firestore doesn't allow undefined
+  const cleanData: Record<string, any> = {
+    name: data.name,
+    country: data.country,
+    roles: data.roles,
+  };
+  
+  // Only include avatarUrl if it's defined and not empty
+  if (data.avatarUrl !== undefined && data.avatarUrl !== null && data.avatarUrl.trim() !== '') {
+    cleanData.avatarUrl = data.avatarUrl;
+  }
+  
+  return addDoc(cricketersCollection, cleanData).catch(async (serverError) => {
     const permissionError = new FirestorePermissionError({
       path: cricketersCollection.path,
       operation: 'create',
-      requestResourceData: data,
+      requestResourceData: cleanData,
     });
     errorEmitter.emit('permission-error', permissionError);
     throw serverError; // Re-throw to be caught by the caller
@@ -48,11 +61,25 @@ export function updateCricketer(
   data: Partial<CricketerData>
 ) {
   const cricketerDocRef = doc(firestore, 'cricketers', cricketerId);
-  return updateDoc(cricketerDocRef, data).catch(async (serverError) => {
+  
+  // Remove undefined values - Firestore doesn't allow undefined
+  const cleanData: Record<string, any> = {};
+  
+  // Only include fields that are defined
+  if (data.name !== undefined) cleanData.name = data.name;
+  if (data.country !== undefined) cleanData.country = data.country;
+  if (data.roles !== undefined) cleanData.roles = data.roles;
+  
+  // Only include avatarUrl if it's defined and not empty
+  if (data.avatarUrl !== undefined && data.avatarUrl !== null && data.avatarUrl.trim() !== '') {
+    cleanData.avatarUrl = data.avatarUrl;
+  }
+  
+  return updateDoc(cricketerDocRef, cleanData).catch(async (serverError) => {
     const permissionError = new FirestorePermissionError({
       path: cricketerDocRef.path,
       operation: 'update',
-      requestResourceData: data,
+      requestResourceData: cleanData,
     });
     errorEmitter.emit('permission-error', permissionError);
     throw serverError; // Re-throw to be caught by the caller

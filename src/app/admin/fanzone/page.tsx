@@ -160,12 +160,18 @@ export default function AdminFanZonePage() {
 
         try {
             const roles = row.roles ? row.roles.split(',').map((r: string) => r.trim()) : [];
-            await addCricketer(firestore, {
+            const cricketerData: any = {
                 name: row.name.trim(),
                 country: row.country?.trim() || '',
                 roles: roles,
-                avatarUrl: row.avatarUrl?.trim() || undefined,
-            });
+            };
+            
+            // Only include avatarUrl if it exists and is not empty
+            if (row.avatarUrl && row.avatarUrl.trim() !== '') {
+                cricketerData.avatarUrl = row.avatarUrl.trim();
+            }
+            
+            await addCricketer(firestore, cricketerData);
             
             if (currentIndex && total) {
                 console.log(`✅ Uploaded cricketer ${currentIndex}/${total}: "${row.name}"`);
@@ -194,11 +200,17 @@ export default function AdminFanZonePage() {
         }
 
         try {
-            await addTeam(firestore, {
+            const teamData: any = {
                 name: row.name.trim(),
                 type: (row.type || 'ip') as 'ip' | 'national',
-                logoUrl: row.logoUrl?.trim() || undefined,
-            });
+            };
+            
+            // Only include logoUrl if it exists and is not empty
+            if (row.logoUrl && row.logoUrl.trim() !== '') {
+                teamData.logoUrl = row.logoUrl.trim();
+            }
+            
+            await addTeam(firestore, teamData);
             
             if (currentIndex && total) {
                 console.log(`✅ Uploaded team ${currentIndex}/${total}: "${row.name}"`);
@@ -227,19 +239,35 @@ export default function AdminFanZonePage() {
         }
 
         try {
-            await addMovie(firestore, {
+            const movieData: any = {
                 title: row.title.trim(),
                 releaseYear: row.releaseYear ? parseInt(row.releaseYear) : new Date().getFullYear(),
                 genre: row.genre?.trim() || '',
                 industry: row.industry?.trim() || 'Bollywood', // Default to Bollywood if not specified
                 description: row.description?.trim() || '',
-                posterUrl: row.posterUrl?.trim() || undefined,
-                director: row.director?.trim() || undefined,
-                cast: row.cast?.trim() || undefined,
-                runtime: row.runtime?.trim() || undefined,
-                imdbRating: row.imdbRating ? parseFloat(row.imdbRating) : undefined,
-                language: row.language?.trim() || undefined,
-            });
+            };
+            
+            // Only include optional fields if they exist and are not empty
+            if (row.posterUrl && row.posterUrl.trim() !== '') {
+                movieData.posterUrl = row.posterUrl.trim();
+            }
+            if (row.director && row.director.trim() !== '') {
+                movieData.director = row.director.trim();
+            }
+            if (row.cast && row.cast.trim() !== '') {
+                movieData.cast = row.cast.trim();
+            }
+            if (row.runtime && row.runtime.trim() !== '') {
+                movieData.runtime = row.runtime.trim();
+            }
+            if (row.imdbRating && row.imdbRating.trim() !== '') {
+                movieData.imdbRating = parseFloat(row.imdbRating);
+            }
+            if (row.language && row.language.trim() !== '') {
+                movieData.language = row.language.trim();
+            }
+            
+            await addMovie(firestore, movieData);
             
             if (currentIndex && total) {
                 console.log(`✅ Uploaded movie ${currentIndex}/${total}: "${row.title}"`);
