@@ -38,13 +38,11 @@ const phaseLabels: Record<string, string> = {
   'Post-Match': 'Post-Match',
   // ODI phases
   'First Innings - Powerplay 1 (Overs 1-10)': '1st Innings Powerplay 1',
-  'First Innings - Middle Overs 1 (Overs 11-30)': '1st Innings Middle Overs',
-  'First Innings - Powerplay 2 (Overs 31-40)': '1st Innings Powerplay 2',
-  'First Innings - Death Overs (Overs 41-50)': '1st Innings Death Overs',
+  'First Innings - Middle Overs (Overs 11-40)': '1st Innings Middle Overs',
+  'First Innings - Powerplay 2 (Overs 41-50)': '1st Innings Powerplay 2',
   'Second Innings - Powerplay 1 (Overs 1-10)': '2nd Innings Powerplay 1',
-  'Second Innings - Middle Overs 1 (Overs 11-30)': '2nd Innings Middle Overs',
-  'Second Innings - Powerplay 2 (Overs 31-40)': '2nd Innings Powerplay 2',
-  'Second Innings - Death Overs (Overs 41-50)': '2nd Innings Death Overs',
+  'Second Innings - Middle Overs (Overs 11-40)': '2nd Innings Middle Overs',
+  'Second Innings - Powerplay 2 (Overs 41-50)': '2nd Innings Powerplay 2',
 };
 
 const statusConfig = {

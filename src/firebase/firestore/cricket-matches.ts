@@ -276,7 +276,7 @@ export type CricketEventCategory =
  * 
  * Phases are organized by format:
  * - T20/IPL: 20 overs per innings
- * - ODI: 50 overs per innings (2 powerplays)
+ * - ODI: 50 overs per innings (Powerplay 1: 1-10, Middle Overs: 11-40, Powerplay 2: 41-50)
  * - Test: 90 overs per day (3 sessions per day)
  */
 export type MatchPhase = 
@@ -293,17 +293,15 @@ export type MatchPhase =
   | 'Second Innings - Middle Overs (Overs 7-15)'
   | 'Second Innings - Death Overs (Overs 16-20)'
   
-  // ========== ODI PHASES (50 Overs Per Innings, 2 Powerplays) ==========
+  // ========== ODI PHASES (50 Overs Per Innings) ==========
   // First Innings ODI Phases
   | 'First Innings - Powerplay 1 (Overs 1-10)'
-  | 'First Innings - Middle Overs 1 (Overs 11-30)'
-  | 'First Innings - Powerplay 2 (Overs 31-40)'
-  | 'First Innings - Death Overs (Overs 41-50)'
+  | 'First Innings - Middle Overs (Overs 11-40)'
+  | 'First Innings - Powerplay 2 (Overs 41-50)'
   // Second Innings ODI Phases
   | 'Second Innings - Powerplay 1 (Overs 1-10)'
-  | 'Second Innings - Middle Overs 1 (Overs 11-30)'
-  | 'Second Innings - Powerplay 2 (Overs 31-40)'
-  | 'Second Innings - Death Overs (Overs 41-50)'
+  | 'Second Innings - Middle Overs (Overs 11-40)'
+  | 'Second Innings - Powerplay 2 (Overs 41-50)'
   
   // ========== TEST MATCH PHASES (90 Overs Per Day, 3 Sessions) ==========
   // Day 1 Sessions
@@ -326,6 +324,40 @@ export type MatchPhase =
   | 'Day 5 - Session 1 (Overs 1-30)'
   | 'Day 5 - Session 2 (Overs 31-60)'
   | 'Day 5 - Session 3 (Overs 61-90)';
+
+/**
+ * Powerplay phase information for ODI matches
+ */
+export type PowerplayPhase = {
+  phase: 'P1' | 'P2' | 'P3';
+  overs: { start: number; end: number };
+  maxFieldersOutside: 2 | 4 | 5;
+  description: string;
+};
+
+/**
+ * ODI Powerplay Rules - Fielding restrictions for each phase
+ */
+export const ODI_POWERPLAY_RULES: Record<'P1' | 'P2' | 'P3', PowerplayPhase> = {
+  P1: {
+    phase: 'P1',
+    overs: { start: 1, end: 10 },
+    maxFieldersOutside: 2,
+    description: 'Mandatory powerplay with 2 fielders outside 30-yard circle',
+  },
+  P2: {
+    phase: 'P2',
+    overs: { start: 11, end: 40 },
+    maxFieldersOutside: 4,
+    description: 'Middle overs with 4 fielders outside 30-yard circle',
+  },
+  P3: {
+    phase: 'P3',
+    overs: { start: 41, end: 50 },
+    maxFieldersOutside: 5,
+    description: 'Death overs powerplay with 5 fielders outside 30-yard circle',
+  },
+};
 
 /**
  * Match state information for determining event unlocking
@@ -383,29 +415,25 @@ export function getCurrentMatchPhase(state: MatchState): MatchPhase {
     }
   }
 
-  // ODI phases
+  // ODI phases: P1: 1-10, Middle Overs: 11-40, P2: 41-50
   if (format === 'ODI') {
     if (currentInnings === 1) {
       if (currentOver >= 0 && currentOver <= 10) {
         return 'First Innings - Powerplay 1 (Overs 1-10)';
-      } else if (currentOver > 10 && currentOver <= 30) {
-        return 'First Innings - Middle Overs 1 (Overs 11-30)';
-      } else if (currentOver > 30 && currentOver <= 40) {
-        return 'First Innings - Powerplay 2 (Overs 31-40)';
+      } else if (currentOver > 10 && currentOver <= 40) {
+        return 'First Innings - Middle Overs (Overs 11-40)';
       } else if (currentOver > 40 && currentOver <= 50) {
-        return 'First Innings - Death Overs (Overs 41-50)';
+        return 'First Innings - Powerplay 2 (Overs 41-50)';
       }
     } else if (currentInnings === 2) {
       // For second innings, adjust over number (subtract first innings overs)
       const secondInningsOver = currentOver - 50;
       if (secondInningsOver >= 0 && secondInningsOver <= 10) {
         return 'Second Innings - Powerplay 1 (Overs 1-10)';
-      } else if (secondInningsOver > 10 && secondInningsOver <= 30) {
-        return 'Second Innings - Middle Overs 1 (Overs 11-30)';
-      } else if (secondInningsOver > 30 && secondInningsOver <= 40) {
-        return 'Second Innings - Powerplay 2 (Overs 31-40)';
+      } else if (secondInningsOver > 10 && secondInningsOver <= 40) {
+        return 'Second Innings - Middle Overs (Overs 11-40)';
       } else if (secondInningsOver > 40 && secondInningsOver <= 50) {
-        return 'Second Innings - Death Overs (Overs 41-50)';
+        return 'Second Innings - Powerplay 2 (Overs 41-50)';
       }
     }
   }
@@ -581,24 +609,20 @@ export function getEventLockOver(
     }
   }
 
-  // ODI lock overs
+  // ODI lock overs: P1: 1-10, Middle Overs: 11-40, P2: 41-50
   if (format === 'ODI') {
     switch (eventTemplate.matchPhase) {
       case 'First Innings - Powerplay 1 (Overs 1-10)':
         return 10;
-      case 'First Innings - Middle Overs 1 (Overs 11-30)':
-        return 30;
-      case 'First Innings - Powerplay 2 (Overs 31-40)':
+      case 'First Innings - Middle Overs (Overs 11-40)':
         return 40;
-      case 'First Innings - Death Overs (Overs 41-50)':
+      case 'First Innings - Powerplay 2 (Overs 41-50)':
         return 50;
       case 'Second Innings - Powerplay 1 (Overs 1-10)':
         return 60; // 50 + 10
-      case 'Second Innings - Middle Overs 1 (Overs 11-30)':
-        return 80; // 50 + 30
-      case 'Second Innings - Powerplay 2 (Overs 31-40)':
+      case 'Second Innings - Middle Overs (Overs 11-40)':
         return 90; // 50 + 40
-      case 'Second Innings - Death Overs (Overs 41-50)':
+      case 'Second Innings - Powerplay 2 (Overs 41-50)':
         return 100; // 50 + 50
       default:
         return null;
@@ -2010,7 +2034,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     applicableFormats: ['ODI'],
   },
   
-  // ========== FIRST INNINGS - MIDDLE OVERS 1 (OVERS 11-30) ==========
+  // ========== FIRST INNINGS - MIDDLE OVERS (OVERS 11-40) ==========
   {
     title: 'ODI First Innings Score After Over 25',
     description: 'Predict the total score after 25 overs in first innings (ODI).',
@@ -2018,7 +2042,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 70,
     difficultyLevel: 'medium',
     category: 'Batting Events',
-    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    matchPhase: 'First Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 1,
     unlockAfterOver: 10,
     defaultOptions: ['0-100', '101-130', '131-160', '161-190', '191+'],
@@ -2032,7 +2056,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 75,
     difficultyLevel: 'medium',
     category: 'Batting Events',
-    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    matchPhase: 'First Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 1,
     unlockAfterOver: 10,
     defaultOptions: ['0-120', '121-150', '151-180', '181-210', '211+'],
@@ -2046,7 +2070,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 50,
     difficultyLevel: 'medium',
     category: 'Batting Events',
-    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    matchPhase: 'First Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 1,
     unlockAfterOver: 10,
     defaultOptions: ['0-2', '3', '4', '5', '6+'],
@@ -2060,7 +2084,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 55,
     difficultyLevel: 'medium',
     category: 'Batting Events',
-    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    matchPhase: 'First Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 1,
     unlockAfterOver: 10,
     defaultOptions: ['0-2', '3', '4', '5', '6+'],
@@ -2074,7 +2098,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 75,
     difficultyLevel: 'hard',
     category: 'Batting Events',
-    matchPhase: 'First Innings - Middle Overs 1 (Overs 11-30)',
+    matchPhase: 'First Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 1,
     unlockAfterOver: 10,
     defaultOptions: ['Over 1-20', 'Over 21-30', 'Over 31+', 'No 100 partnership'],
@@ -2082,21 +2106,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     applicableFormats: ['ODI'],
   },
   
-  // ========== FIRST INNINGS - POWERPLAY 2 (OVERS 31-40) ==========
-  {
-    title: 'ODI First Innings Powerplay 2 Total Runs (Overs 31-40)',
-    description: 'Predict the total runs scored in the first innings powerplay 2 (overs 31-40) in ODI.',
-    eventType: 'powerplay_runs',
-    defaultPoints: 65,
-    difficultyLevel: 'medium',
-    category: 'Powerplay Events',
-    matchPhase: 'First Innings - Powerplay 2 (Overs 31-40)',
-    defaultInnings: 1,
-    unlockAfterOver: 30,
-    defaultOptions: ['0-40', '41-50', '51-60', '61-70', '71+'],
-    defaultRules: ['Unlocks after over 30. Locks after over 40.'],
-    applicableFormats: ['ODI'],
-  },
+  // ========== FIRST INNINGS - MIDDLE OVERS CONTINUED (OVERS 31-40) ==========
   {
     title: 'ODI First Innings Score After Over 35',
     description: 'Predict the total score after 35 overs in first innings (ODI).',
@@ -2104,7 +2114,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 80,
     difficultyLevel: 'hard',
     category: 'Batting Events',
-    matchPhase: 'First Innings - Powerplay 2 (Overs 31-40)',
+    matchPhase: 'First Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 1,
     unlockAfterOver: 30,
     defaultOptions: ['0-150', '151-200', '201-250', '251-300', '301+'],
@@ -2118,7 +2128,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 85,
     difficultyLevel: 'hard',
     category: 'Batting Events',
-    matchPhase: 'First Innings - Powerplay 2 (Overs 31-40)',
+    matchPhase: 'First Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 1,
     unlockAfterOver: 30,
     defaultOptions: ['0-200', '201-250', '251-300', '301-350', '351+'],
@@ -2132,7 +2142,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 60,
     difficultyLevel: 'medium',
     category: 'Batting Events',
-    matchPhase: 'First Innings - Powerplay 2 (Overs 31-40)',
+    matchPhase: 'First Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 1,
     unlockAfterOver: 30,
     defaultOptions: ['0-3', '4', '5', '6', '7+'],
@@ -2140,7 +2150,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     applicableFormats: ['ODI'],
   },
   
-  // ========== FIRST INNINGS - DEATH OVERS (OVERS 41-50) ==========
+  // ========== FIRST INNINGS - POWERPLAY 2 (OVERS 41-50) ==========
   {
     title: 'ODI First Innings Score After Over 45',
     description: 'Predict the total score after 45 overs in first innings (ODI).',
@@ -2148,7 +2158,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 90,
     difficultyLevel: 'hard',
     category: 'Batting Events',
-    matchPhase: 'First Innings - Death Overs (Overs 41-50)',
+    matchPhase: 'First Innings - Powerplay 2 (Overs 41-50)',
     defaultInnings: 1,
     unlockAfterOver: 40,
     defaultOptions: ['0-250', '251-300', '301-350', '351-400', '401+'],
@@ -2162,7 +2172,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 100,
     difficultyLevel: 'hard',
     category: 'Innings Events',
-    matchPhase: 'First Innings - Death Overs (Overs 41-50)',
+    matchPhase: 'First Innings - Powerplay 2 (Overs 41-50)',
     defaultInnings: 1,
     unlockAfterOver: 40,
     defaultOptions: ['0-200', '201-250', '251-300', '301-350', '351-400', '401+'],
@@ -2176,7 +2186,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 60,
     difficultyLevel: 'medium',
     category: 'Innings Events',
-    matchPhase: 'First Innings - Death Overs (Overs 41-50)',
+    matchPhase: 'First Innings - Powerplay 2 (Overs 41-50)',
     defaultInnings: 1,
     unlockAfterOver: 40,
     defaultOptions: ['0-3', '4-6', '7-9', '10 (All Out)'],
@@ -2239,7 +2249,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     applicableFormats: ['ODI'],
   },
   
-  // ========== SECOND INNINGS - MIDDLE OVERS 1 (OVERS 11-30) ==========
+  // ========== SECOND INNINGS - MIDDLE OVERS (OVERS 11-40) ==========
   {
     title: 'ODI Second Innings Score After Over 25',
     description: 'Predict the total score after 25 overs in second innings (ODI).',
@@ -2247,7 +2257,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 70,
     difficultyLevel: 'medium',
     category: 'Batting Events',
-    matchPhase: 'Second Innings - Middle Overs 1 (Overs 11-30)',
+    matchPhase: 'Second Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 2,
     unlockAfterOver: 60,
     defaultOptions: ['0-100', '101-130', '131-160', '161-190', '191+'],
@@ -2261,7 +2271,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 75,
     difficultyLevel: 'medium',
     category: 'Match Outcome',
-    matchPhase: 'Second Innings - Middle Overs 1 (Overs 11-30)',
+    matchPhase: 'Second Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 2,
     unlockAfterOver: 60,
     defaultOptions: ['Below 5', '5-6', '6-7', '7-8', '8+'],
@@ -2269,21 +2279,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     applicableFormats: ['ODI'],
   },
   
-  // ========== SECOND INNINGS - POWERPLAY 2 (OVERS 31-40) ==========
-  {
-    title: 'ODI Second Innings Powerplay 2 Total Runs (Overs 31-40)',
-    description: 'Predict the total runs scored in the second innings powerplay 2 (overs 31-40) in ODI.',
-    eventType: 'powerplay_runs',
-    defaultPoints: 65,
-    difficultyLevel: 'medium',
-    category: 'Powerplay Events',
-    matchPhase: 'Second Innings - Powerplay 2 (Overs 31-40)',
-    defaultInnings: 2,
-    unlockAfterOver: 80,
-    defaultOptions: ['0-40', '41-50', '51-60', '61-70', '71+'],
-    defaultRules: ['Unlocks after over 30 of second innings. Locks after over 40 of second innings.'],
-    applicableFormats: ['ODI'],
-  },
+  // ========== SECOND INNINGS - MIDDLE OVERS CONTINUED (OVERS 31-40) ==========
   {
     title: 'ODI Second Innings Score After Over 40',
     description: 'Predict the total score after 40 overs in second innings (ODI).',
@@ -2291,7 +2287,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 85,
     difficultyLevel: 'hard',
     category: 'Batting Events',
-    matchPhase: 'Second Innings - Powerplay 2 (Overs 31-40)',
+    matchPhase: 'Second Innings - Middle Overs (Overs 11-40)',
     defaultInnings: 2,
     unlockAfterOver: 80,
     defaultOptions: ['0-200', '201-250', '251-300', '301-350', '351+'],
@@ -2299,7 +2295,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     applicableFormats: ['ODI'],
   },
   
-  // ========== SECOND INNINGS - DEATH OVERS (OVERS 41-50) ==========
+  // ========== SECOND INNINGS - POWERPLAY 2 (OVERS 41-50) ==========
   {
     title: 'ODI Second Innings Score After Over 45',
     description: 'Predict the total score after 45 overs in second innings (ODI).',
@@ -2307,7 +2303,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 90,
     difficultyLevel: 'hard',
     category: 'Batting Events',
-    matchPhase: 'Second Innings - Death Overs (Overs 41-50)',
+    matchPhase: 'Second Innings - Powerplay 2 (Overs 41-50)',
     defaultInnings: 2,
     unlockAfterOver: 90,
     defaultOptions: ['0-250', '251-300', '301-350', '351-400', '401+'],
@@ -2321,7 +2317,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     defaultPoints: 100,
     difficultyLevel: 'hard',
     category: 'Innings Events',
-    matchPhase: 'Second Innings - Death Overs (Overs 41-50)',
+    matchPhase: 'Second Innings - Powerplay 2 (Overs 41-50)',
     defaultInnings: 2,
     unlockAfterOver: 90,
     defaultOptions: ['0-200', '201-250', '251-300', '301-350', '351-400', '401+'],

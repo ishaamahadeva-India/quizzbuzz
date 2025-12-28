@@ -64,18 +64,13 @@ const phaseConfig: Record<string, { label: string; color: string; icon: any }> =
     color: 'bg-green-500',
     icon: Zap,
   },
-  'First Innings - Middle Overs 1 (Overs 11-30)': {
+  'First Innings - Middle Overs (Overs 11-40)': {
     label: '1st Innings Middle Overs',
     color: 'bg-yellow-500',
     icon: TrendingUp,
   },
-  'First Innings - Powerplay 2 (Overs 31-40)': {
+  'First Innings - Powerplay 2 (Overs 41-50)': {
     label: '1st Innings Powerplay 2',
-    color: 'bg-green-500',
-    icon: Zap,
-  },
-  'First Innings - Death Overs (Overs 41-50)': {
-    label: '1st Innings Death Overs',
     color: 'bg-orange-500',
     icon: Zap,
   },
@@ -84,18 +79,13 @@ const phaseConfig: Record<string, { label: string; color: string; icon: any }> =
     color: 'bg-green-500',
     icon: Zap,
   },
-  'Second Innings - Middle Overs 1 (Overs 11-30)': {
+  'Second Innings - Middle Overs (Overs 11-40)': {
     label: '2nd Innings Middle Overs',
     color: 'bg-yellow-500',
     icon: TrendingUp,
   },
-  'Second Innings - Powerplay 2 (Overs 31-40)': {
+  'Second Innings - Powerplay 2 (Overs 41-50)': {
     label: '2nd Innings Powerplay 2',
-    color: 'bg-green-500',
-    icon: Zap,
-  },
-  'Second Innings - Death Overs (Overs 41-50)': {
-    label: '2nd Innings Death Overs',
     color: 'bg-orange-500',
     icon: Zap,
   },
