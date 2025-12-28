@@ -171,8 +171,8 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
 
   const toggleCategorySelection = (category: string) => {
     const categoryEvents = groupedEvents[category] || [];
-    const categoryIndices = new Set(categoryEvents.map(e => e.index));
-    const allSelected = categoryIndices.every(idx => selectedEventIndices.has(idx));
+    const categoryIndices = categoryEvents.map(e => e.index);
+    const allSelected = categoryIndices.length > 0 && categoryIndices.every(idx => selectedEventIndices.has(idx));
     
     const newSet = new Set(selectedEventIndices);
     if (allSelected) {
@@ -507,9 +507,9 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
                   
                   <div className="space-y-6 mt-4">
                     {Object.entries(groupedEvents).map(([category, events]) => {
-                      const categoryIndices = new Set(events.map(e => e.index));
-                      const allSelected = categoryIndices.size > 0 && categoryIndices.every(idx => selectedEventIndices.has(idx));
-                      const someSelected = Array.from(categoryIndices).some(idx => selectedEventIndices.has(idx));
+                      const categoryIndices = events.map(e => e.index);
+                      const allSelected = categoryIndices.length > 0 && categoryIndices.every(idx => selectedEventIndices.has(idx));
+                      const someSelected = categoryIndices.some(idx => selectedEventIndices.has(idx));
                       
                       return (
                         <div key={category} className="space-y-3">
