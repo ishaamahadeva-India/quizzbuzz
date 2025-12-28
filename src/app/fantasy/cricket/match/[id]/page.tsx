@@ -684,7 +684,8 @@ export default function CricketMatchPage() {
 
   // Fetch match from Firestore
   const matchRef = firestore ? doc(firestore, 'fantasy_matches', id) : null;
-  const { data: match, isLoading: matchLoading } = useDoc(matchRef);
+  const { data: matchData, isLoading: matchLoading } = useDoc(matchRef);
+  const match = matchData ? { ...matchData, id } as FantasyMatch : null;
 
   const playersQuery = firestore ? collection(firestore, 'cricketers') : null;
   const { data: players, isLoading: playersLoading } = useCollection(playersQuery);
