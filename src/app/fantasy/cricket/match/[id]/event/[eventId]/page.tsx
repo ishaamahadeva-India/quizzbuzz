@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useUser, useDoc } from '@/firebase';
-import { doc, collection, query, where, getDocs, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, getDoc, addDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -56,7 +56,7 @@ export default function MatchEventPredictionPage() {
     const fetchEvent = async () => {
       try {
         const eventRef = doc(firestore, 'fantasy_matches', matchId, 'events', eventId);
-        const eventSnap = await eventRef.get();
+        const eventSnap = await getDoc(eventRef);
         
         if (eventSnap.exists()) {
           const eventData = { id: eventSnap.id, ...eventSnap.data() } as CricketEvent;
