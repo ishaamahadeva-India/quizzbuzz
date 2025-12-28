@@ -462,6 +462,16 @@ function FirstInningsView({ onInningsEnd, currentStreak, setStreak, onScoreUpdat
         // No simulated results - wait for real match data
     };
 
+    const handleNextPrediction = () => {
+        if (currentPredIndex < livePredictions.length - 1) {
+            setCurrentPredIndex(prev => prev + 1);
+            setStatus('predicting');
+        } else {
+            // All predictions completed
+            onInningsEnd();
+        }
+    };
+
     const renderPredictionComponent = () => {
         switch(currentPrediction.type) {
             case 'yesno':
@@ -501,16 +511,33 @@ function FirstInningsView({ onInningsEnd, currentStreak, setStreak, onScoreUpdat
                             <p className="text-2xl font-semibold text-balance min-h-[64px]">{currentPrediction.question}</p>
                             {renderPredictionComponent()}
                              {status !== 'predicting' && (
-                                <div className='mt-4 min-h-[40px]'>
+                                <div className='mt-4 space-y-4'>
                                     {status === 'locked' && (
-                                        <div className="space-y-2">
-                                            <p className='font-semibold text-primary'>Prediction Locked!</p>
-                                            <p className='text-sm text-muted-foreground'>
-                                                Your prediction has been saved. Results will be displayed after the event completes during the match.
-                                            </p>
-                                            <p className='text-xs text-muted-foreground mt-2'>
-                                                Note: This is a demo view. For real match predictions, visit the Events page.
-                                            </p>
+                                        <div className="space-y-3">
+                                            <div className="space-y-2">
+                                                <p className='font-semibold text-primary'>✓ Prediction Locked!</p>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    Your prediction has been saved. Results will be displayed after the event completes during the match.
+                                                </p>
+                                            </div>
+                                            {currentPredIndex < livePredictions.length - 1 ? (
+                                                <Button 
+                                                    onClick={handleNextPrediction}
+                                                    className="w-full"
+                                                    size="lg"
+                                                >
+                                                    Next Prediction ({currentPredIndex + 1}/{livePredictions.length})
+                                                </Button>
+                                            ) : (
+                                                <Button 
+                                                    onClick={handleNextPrediction}
+                                                    className="w-full"
+                                                    size="lg"
+                                                    variant="default"
+                                                >
+                                                    Complete All Predictions
+                                                </Button>
+                                            )}
                                         </div>
                                     )}
                                     {/* Results will only show when event status is 'completed' with actual result data from Firestore */}
