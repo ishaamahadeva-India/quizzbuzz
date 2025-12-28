@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -177,6 +177,19 @@ export function CricketTournamentForm({ onSubmit, defaultValues }: CricketTourna
     return template.applicableFormats.includes(selectedFormat as 'T20' | 'ODI' | 'Test' | 'IPL');
   });
 
+  // Group events by category
+  const groupedEvents = React.useMemo(() => {
+    const grouped: Record<string, Array<{ template: typeof TOURNAMENT_EVENT_TEMPLATES[0]; index: number }>> = {};
+    availableTemplates.forEach((template, index) => {
+      const category = template.category || 'Uncategorized';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push({ template, index });
+    });
+    return grouped;
+  }, [availableTemplates]);
+
   const addEventFromTemplate = (template: typeof TOURNAMENT_EVENT_TEMPLATES[0]) => {
     appendEvent({
       title: template.title,
@@ -202,6 +215,20 @@ export function CricketTournamentForm({ onSubmit, defaultValues }: CricketTourna
       // Select all
       setSelectedEventIndices(new Set(availableTemplates.map((_, index) => index)));
     }
+  };
+
+  const handleToggleCategory = (category: string) => {
+    const categoryEvents = groupedEvents[category] || [];
+    const categoryIndices = new Set(categoryEvents.map(e => e.index));
+    const allSelected = categoryIndices.size > 0 && categoryIndices.every(idx => selectedEventIndices.has(idx));
+    
+    const newSet = new Set(selectedEventIndices);
+    if (allSelected) {
+      categoryIndices.forEach(idx => newSet.delete(idx));
+    } else {
+      categoryIndices.forEach(idx => newSet.add(idx));
+    }
+    setSelectedEventIndices(newSet);
   };
 
   const handleToggleEvent = (index: number) => {
@@ -775,67 +802,82 @@ export function CricketTournamentForm({ onSubmit, defaultValues }: CricketTourna
                       )}
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="flex items-center justify-between mb-4 pt-2 border-t">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSelectAllEvents}
-                    >
-                      {selectedEventIndices.size === availableTemplates.length ? 'Deselect All' : 'Select All'}
-                    </Button>
-                    {selectedEventIndices.size > 0 && (
-                      <Button
-                        type="button"
-                        onClick={handleAddSelectedEvents}
-                        className="ml-auto"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add {selectedEventIndices.size} Selected Event(s)
-                      </Button>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 gap-2 mt-2">
-                    {availableTemplates.map((template, index) => {
-                      const isSelected = selectedEventIndices.has(index);
+                  <div className="space-y-6 mt-4">
+                    {Object.entries(groupedEvents).map(([category, events]) => {
+                      const categoryIndices = new Set(events.map(e => e.index));
+                      const allSelected = categoryIndices.size > 0 && categoryIndices.every(idx => selectedEventIndices.has(idx));
+                      
                       return (
-                        <div
-                          key={index}
-                          className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                            isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-                          }`}
-                          onClick={() => handleToggleEvent(index)}
-                        >
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => handleToggleEvent(index)}
-                            className="mt-1"
-                          />
-                          <div className="flex-1">
-                            <div className="font-semibold">{template.title}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {template.description}
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="secondary">{template.eventType}</Badge>
-                              <Badge variant="outline">{template.defaultPoints} points</Badge>
-                              {template.difficultyLevel && (
-                                <Badge variant="outline">{template.difficultyLevel}</Badge>
-                              )}
-                              {template.multiSelect && (
-                                <Badge variant="default">Multi-select</Badge>
-                              )}
-                            </div>
+                        <div key={category} className="space-y-3">
+                          <div className="flex items-center justify-between border-b pb-2">
+                            <h3 className="font-semibold text-lg">{category}</h3>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleCategory(category)}
+                            >
+                              {allSelected ? 'Deselect All' : 'Select All'}
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 gap-2">
+                            {events.map(({ template, index }) => {
+                              const isSelected = selectedEventIndices.has(index);
+                              return (
+                                <div
+                                  key={index}
+                                  className={cn(
+                                    "flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                                    isSelected && "bg-accent border-primary"
+                                  )}
+                                  onClick={() => handleToggleEvent(index)}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => handleToggleEvent(index)}
+                                    className="mt-1"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-semibold">{template.title}</div>
+                                    <div className="text-sm text-muted-foreground mt-1">
+                                      {template.description}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <Badge variant="secondary">{template.eventType}</Badge>
+                                      <Badge variant="outline">{template.defaultPoints} points</Badge>
+                                      {template.difficultyLevel && (
+                                        <Badge variant="outline">{template.difficultyLevel}</Badge>
+                                      )}
+                                      {template.multiSelect && (
+                                        <Badge variant="default">Multi-select</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  {selectedEventIndices.size === 0 && (
-                    <div className="pt-4 border-t mt-4">
-                      <p className="text-sm text-muted-foreground text-center">
-                        Select events using checkboxes above, or click on an event card to add it individually.
-                      </p>
+
+                  {selectedEventIndices.size > 0 && (
+                    <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setSelectedEventIndices(new Set())}
+                      >
+                        Clear Selection
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleAddSelectedEvents}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add {selectedEventIndices.size} Event{selectedEventIndices.size !== 1 ? 's' : ''}
+                      </Button>
                     </div>
                   )}
                 </DialogContent>

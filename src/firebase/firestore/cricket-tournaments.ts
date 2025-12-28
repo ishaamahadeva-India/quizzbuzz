@@ -289,6 +289,16 @@ export function deleteTournamentEvent(
 }
 
 /**
+ * Tournament event categories for grouping
+ */
+export type TournamentEventCategory = 
+  | 'Tournament Level'
+  | 'Group Level'
+  | 'Player Level'
+  | 'Special Predictions'
+  | 'Live Tournament';
+
+/**
  * Predefined tournament event templates
  */
 export const TOURNAMENT_EVENT_TEMPLATES: Array<{
@@ -302,14 +312,16 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
   multiSelect?: boolean;
   maxSelections?: number;
   applicableFormats?: ('T20' | 'ODI' | 'Test' | 'IPL')[];
+  category?: TournamentEventCategory; // Category for grouping
 }> = [
-  // Tournament Level Predictions (Before Start)
+  // ========== TOURNAMENT LEVEL PREDICTIONS (BEFORE START) ==========
   {
     title: 'Tournament Winner',
     description: 'Predict which team will win the tournament.',
     eventType: 'tournament_winner',
     defaultPoints: 100,
     difficultyLevel: 'hard',
+    category: 'Tournament Level',
     defaultRules: ['Locked before first match starts.'],
   },
   {
@@ -318,6 +330,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'tournament_runner_up',
     defaultPoints: 60,
     difficultyLevel: 'hard',
+    category: 'Tournament Level',
     defaultRules: ['Locked before first match starts.'],
   },
   {
@@ -326,6 +339,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'semi_finalists',
     defaultPoints: 25,
     difficultyLevel: 'hard',
+    category: 'Tournament Level',
     multiSelect: true,
     maxSelections: 4,
     defaultRules: ['Select exactly 4 teams. Locked before first match starts.'],
@@ -336,6 +350,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'finalists',
     defaultPoints: 50,
     difficultyLevel: 'hard',
+    category: 'Tournament Level',
     multiSelect: true,
     maxSelections: 2,
     defaultRules: ['Select exactly 2 teams. Locked before first match starts.'],
@@ -346,16 +361,18 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'points_table_topper',
     defaultPoints: 40,
     difficultyLevel: 'medium',
+    category: 'Tournament Level',
     defaultRules: ['Locked before first match starts.'],
   },
   
-  // Group Level Predictions
+  // ========== GROUP LEVEL PREDICTIONS ==========
   {
     title: 'Group Topper',
     description: 'Predict which team will top this group.',
     eventType: 'group_topper',
     defaultPoints: 40,
     difficultyLevel: 'medium',
+    category: 'Group Level',
     defaultRules: ['Locked before first match of the group.'],
   },
   {
@@ -364,6 +381,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'group_second_place',
     defaultPoints: 35,
     difficultyLevel: 'medium',
+    category: 'Group Level',
     defaultRules: ['Locked before first match of the group.'],
   },
   {
@@ -372,6 +390,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'group_qualifiers',
     defaultPoints: 30,
     difficultyLevel: 'medium',
+    category: 'Group Level',
     multiSelect: true,
     maxSelections: 2,
     defaultRules: ['Select teams that will qualify. Locked before first match of the group.'],
@@ -382,17 +401,19 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'group_team_points',
     defaultPoints: 50,
     difficultyLevel: 'hard',
+    category: 'Group Level',
     defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9-10', '11+'],
     defaultRules: ['Locked before first match of the group.'],
   },
   
-  // Player Level Predictions
+  // ========== PLAYER LEVEL PREDICTIONS ==========
   {
     title: 'Top Run Scorer',
     description: 'Predict which player will score the most runs in the tournament.',
     eventType: 'top_run_scorer',
     defaultPoints: 80,
     difficultyLevel: 'hard',
+    category: 'Player Level',
     defaultRules: ['Minimum matches played requirement applies.'],
   },
   {
@@ -401,6 +422,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'top_wicket_taker',
     defaultPoints: 80,
     difficultyLevel: 'hard',
+    category: 'Player Level',
     defaultRules: ['Minimum matches played requirement applies.'],
   },
   {
@@ -409,6 +431,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'tournament_mvp',
     defaultPoints: 100,
     difficultyLevel: 'hard',
+    category: 'Player Level',
     defaultRules: ['Based on overall performance across all matches.'],
   },
   {
@@ -417,6 +440,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'most_sixes',
     defaultPoints: 60,
     difficultyLevel: 'medium',
+    category: 'Player Level',
     defaultRules: ['Minimum matches played requirement applies.'],
   },
   {
@@ -425,6 +449,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'best_strike_rate',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Player Level',
     defaultRules: ['Minimum 100 runs required.'],
   },
   {
@@ -433,6 +458,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'most_centuries',
     defaultPoints: 75,
     difficultyLevel: 'hard',
+    category: 'Player Level',
     defaultRules: ['Minimum matches played requirement applies.'],
   },
   {
@@ -441,6 +467,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'most_fifties',
     defaultPoints: 65,
     difficultyLevel: 'medium',
+    category: 'Player Level',
     defaultRules: ['Minimum matches played requirement applies.'],
   },
   {
@@ -449,16 +476,18 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'best_bowling_average',
     defaultPoints: 75,
     difficultyLevel: 'hard',
+    category: 'Player Level',
     defaultRules: ['Minimum 5 wickets required.'],
   },
   
-  // Special Prediction Events
+  // ========== SPECIAL PREDICTION EVENTS ==========
   {
     title: 'Most Toss Wins',
     description: 'Predict which team will win the most tosses in the tournament.',
     eventType: 'most_toss_wins',
     defaultPoints: 40,
     difficultyLevel: 'easy',
+    category: 'Special Predictions',
     defaultRules: ['Based on total toss wins across all matches.'],
   },
   {
@@ -467,6 +496,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'highest_team_total',
     defaultPoints: 60,
     difficultyLevel: 'medium',
+    category: 'Special Predictions',
     defaultRules: ['Highest score in any single match of the tournament.'],
   },
   {
@@ -475,6 +505,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'lowest_team_total',
     defaultPoints: 55,
     difficultyLevel: 'medium',
+    category: 'Special Predictions',
     defaultRules: ['Lowest score in any single match of the tournament.'],
   },
   {
@@ -483,6 +514,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'super_over_count',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Special Predictions',
     defaultOptions: ['0', '1', '2', '3', '4+'],
     defaultRules: ['Total super overs across all matches.'],
   },
@@ -492,6 +524,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'highest_individual_score',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Player Level',
     defaultOptions: ['0-50', '51-75', '76-100', '101-125', '126-150', '151+'],
     defaultRules: ['Highest individual score in any match.'],
   },
@@ -501,6 +534,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'fastest_fifty_tournament',
     defaultPoints: 80,
     difficultyLevel: 'hard',
+    category: 'Player Level',
     defaultOptions: ['1-20 balls', '21-30 balls', '31-40 balls', '41-50 balls', '51+ balls'],
     defaultRules: ['Fastest fifty across all matches.'],
   },
@@ -510,17 +544,19 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'fastest_hundred_tournament',
     defaultPoints: 100,
     difficultyLevel: 'hard',
+    category: 'Player Level',
     defaultOptions: ['1-40 balls', '41-50 balls', '51-60 balls', '61-70 balls', 'No 100'],
     defaultRules: ['Fastest hundred across all matches.'],
   },
   
-  // Live Tournament Predictions (During Tournament)
+  // ========== LIVE TOURNAMENT PREDICTIONS (DURING TOURNAMENT) ==========
   {
     title: 'Group Qualifier (Live)',
     description: 'Predict which team will qualify from this group (unlocks mid-tournament).',
     eventType: 'group_qualifier_live',
     defaultPoints: 45,
     difficultyLevel: 'medium',
+    category: 'Live Tournament',
     defaultRules: ['Unlocks after group stage begins.'],
   },
   {
@@ -529,6 +565,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'top_2_after_matches',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Live Tournament',
     multiSelect: true,
     maxSelections: 2,
     defaultRules: ['Unlocks mid-tournament.'],
@@ -539,6 +576,7 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'playoff_qualifier',
     defaultPoints: 40,
     difficultyLevel: 'medium',
+    category: 'Live Tournament',
     defaultOptions: ['Yes', 'No'],
     defaultRules: ['Unlocks mid-tournament.'],
   },
@@ -548,7 +586,232 @@ export const TOURNAMENT_EVENT_TEMPLATES: Array<{
     eventType: 'mvp_as_of_today',
     defaultPoints: 60,
     difficultyLevel: 'medium',
+    category: 'Live Tournament',
     defaultRules: ['Unlocks mid-tournament. Updates as tournament progresses.'],
+  },
+  
+  // ========== ADDITIONAL TOURNAMENT EVENTS ==========
+  // More Group Level Predictions
+  {
+    title: 'Group Bottom Team',
+    description: 'Predict which team will finish last in this group.',
+    eventType: 'group_second_place',
+    defaultPoints: 30,
+    difficultyLevel: 'medium',
+    category: 'Group Level',
+    defaultRules: ['Locked before first match of the group.'],
+  },
+  {
+    title: 'Group Points Gap',
+    description: 'Predict the points gap between group topper and second place.',
+    eventType: 'group_team_points',
+    defaultPoints: 45,
+    difficultyLevel: 'hard',
+    category: 'Group Level',
+    defaultOptions: ['0-2 points', '3-4 points', '5-6 points', '7+ points'],
+    defaultRules: ['Gap = Group Topper Points - Second Place Points.'],
+  },
+  {
+    title: 'Group Net Run Rate Leader',
+    description: 'Predict which team will have the best Net Run Rate in this group.',
+    eventType: 'group_topper',
+    defaultPoints: 55,
+    difficultyLevel: 'hard',
+    category: 'Group Level',
+    defaultRules: ['Best NRR in the group stage.'],
+  },
+  
+  // More Player Level Predictions
+  {
+    title: 'Most Fours',
+    description: 'Predict which player will hit the most fours in the tournament.',
+    eventType: 'most_sixes',
+    defaultPoints: 55,
+    difficultyLevel: 'medium',
+    category: 'Player Level',
+    defaultRules: ['Minimum matches played requirement applies.'],
+  },
+  {
+    title: 'Best Bowling Economy',
+    description: 'Predict which bowler will have the best economy rate (min 10 overs).',
+    eventType: 'best_bowling_average',
+    defaultPoints: 70,
+    difficultyLevel: 'hard',
+    category: 'Player Level',
+    defaultRules: ['Minimum 10 overs required.'],
+  },
+  {
+    title: 'Most Catches',
+    description: 'Predict which fielder will take the most catches in the tournament.',
+    eventType: 'top_wicket_taker',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Player Level',
+    defaultRules: ['Minimum matches played requirement applies.'],
+  },
+  {
+    title: 'Most Run Outs',
+    description: 'Predict which team/player will effect the most run outs.',
+    eventType: 'top_wicket_taker',
+    defaultPoints: 45,
+    difficultyLevel: 'medium',
+    category: 'Player Level',
+    defaultRules: ['Total run outs across all matches.'],
+  },
+  {
+    title: 'Most Stumpings',
+    description: 'Predict which wicket-keeper will effect the most stumpings.',
+    eventType: 'top_wicket_taker',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Player Level',
+    defaultRules: ['Minimum matches played requirement applies.'],
+  },
+  {
+    title: 'Highest Strike Rate (Min 100 Runs)',
+    description: 'Predict which player will have the highest strike rate (min 100 runs).',
+    eventType: 'best_strike_rate',
+    defaultPoints: 75,
+    difficultyLevel: 'hard',
+    category: 'Player Level',
+    defaultRules: ['Minimum 100 runs required.'],
+  },
+  
+  // More Special Predictions
+  {
+    title: 'Most 50+ Scores',
+    description: 'Predict which player will score the most 50+ runs in the tournament.',
+    eventType: 'most_fifties',
+    defaultPoints: 70,
+    difficultyLevel: 'medium',
+    category: 'Player Level',
+    defaultRules: ['Total 50+ scores across all matches.'],
+  },
+  {
+    title: 'Most 4-Wicket Hauls',
+    description: 'Predict which bowler will take the most 4+ wicket hauls.',
+    eventType: 'top_wicket_taker',
+    defaultPoints: 80,
+    difficultyLevel: 'hard',
+    category: 'Player Level',
+    defaultRules: ['Total 4+ wicket hauls across all matches.'],
+  },
+  {
+    title: 'Most Hat-tricks',
+    description: 'Predict which bowler will take the most hat-tricks (if any).',
+    eventType: 'top_wicket_taker',
+    defaultPoints: 150,
+    difficultyLevel: 'hard',
+    category: 'Player Level',
+    defaultOptions: ['Player 1', 'Player 2', 'Player 3', 'None'],
+    defaultRules: ['Total hat-tricks across all matches.'],
+  },
+  {
+    title: 'Most Ducks',
+    description: 'Predict which player will have the most ducks (0 runs) in the tournament.',
+    eventType: 'most_fifties',
+    defaultPoints: 40,
+    difficultyLevel: 'easy',
+    category: 'Player Level',
+    defaultRules: ['Total ducks across all matches.'],
+  },
+  {
+    title: 'Highest Individual Score Range',
+    description: 'Predict the range of the highest individual score in the tournament.',
+    eventType: 'highest_individual_score',
+    defaultPoints: 85,
+    difficultyLevel: 'hard',
+    category: 'Player Level',
+    defaultOptions: ['0-75', '76-100', '101-125', '126-150', '151-175', '176+'],
+    defaultRules: ['Highest individual score in any match.'],
+  },
+  {
+    title: 'Best Bowling Figures',
+    description: 'Predict the range of best bowling figures (most wickets in an innings).',
+    eventType: 'top_wicket_taker',
+    defaultPoints: 90,
+    difficultyLevel: 'hard',
+    category: 'Player Level',
+    defaultOptions: ['3 wickets', '4 wickets', '5 wickets', '6 wickets', '7+ wickets'],
+    defaultRules: ['Best bowling figures in any single match.'],
+  },
+  
+  // More Team Level Predictions
+  {
+    title: 'Most Wins',
+    description: 'Predict which team will win the most matches in the tournament.',
+    eventType: 'tournament_winner',
+    defaultPoints: 60,
+    difficultyLevel: 'medium',
+    category: 'Special Predictions',
+    defaultRules: ['Total wins across all matches.'],
+  },
+  {
+    title: 'Most Losses',
+    description: 'Predict which team will lose the most matches in the tournament.',
+    eventType: 'tournament_runner_up',
+    defaultPoints: 40,
+    difficultyLevel: 'easy',
+    category: 'Special Predictions',
+    defaultRules: ['Total losses across all matches.'],
+  },
+  {
+    title: 'Best Win Percentage',
+    description: 'Predict which team will have the best win percentage (min 5 matches).',
+    eventType: 'points_table_topper',
+    defaultPoints: 65,
+    difficultyLevel: 'hard',
+    category: 'Special Predictions',
+    defaultRules: ['Win percentage = (Wins / Total Matches) × 100.'],
+  },
+  {
+    title: 'Most Boundaries (Team)',
+    description: 'Predict which team will hit the most boundaries (4s) in the tournament.',
+    eventType: 'highest_team_total',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Special Predictions',
+    defaultRules: ['Total boundaries across all matches.'],
+  },
+  {
+    title: 'Most Sixes (Team)',
+    description: 'Predict which team will hit the most sixes in the tournament.',
+    eventType: 'highest_team_total',
+    defaultPoints: 55,
+    difficultyLevel: 'medium',
+    category: 'Special Predictions',
+    defaultRules: ['Total sixes across all matches.'],
+  },
+  {
+    title: 'Best Net Run Rate',
+    description: 'Predict which team will have the best Net Run Rate in the tournament.',
+    eventType: 'points_table_topper',
+    defaultPoints: 70,
+    difficultyLevel: 'hard',
+    category: 'Special Predictions',
+    defaultRules: ['Best NRR across all matches.'],
+  },
+  
+  // More Live Tournament Predictions
+  {
+    title: 'Top 4 After X Matches',
+    description: 'Predict which teams will be in top 4 after a certain number of matches.',
+    eventType: 'top_2_after_matches',
+    defaultPoints: 60,
+    difficultyLevel: 'hard',
+    category: 'Live Tournament',
+    multiSelect: true,
+    maxSelections: 4,
+    defaultRules: ['Unlocks mid-tournament.'],
+  },
+  {
+    title: 'Elimination Race',
+    description: 'Predict which team will be eliminated first from the tournament.',
+    eventType: 'playoff_qualifier',
+    defaultPoints: 50,
+    difficultyLevel: 'medium',
+    category: 'Live Tournament',
+    defaultRules: ['First team to be mathematically eliminated.'],
   },
 ];
 

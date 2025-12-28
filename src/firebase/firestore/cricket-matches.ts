@@ -186,6 +186,19 @@ export function deleteMatchEvent(
 }
 
 /**
+ * Cricket event categories for grouping
+ */
+export type CricketEventCategory = 
+  | 'Powerplay Events'
+  | 'Batting Events'
+  | 'Bowling Events'
+  | 'Fielding Events'
+  | 'Match Outcome'
+  | 'Innings Events'
+  | 'Special Events'
+  | 'Player Performance';
+
+/**
  * Predefined cricket event templates (30+ events)
  */
 export const CRICKET_EVENT_TEMPLATES: Array<{
@@ -197,14 +210,16 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
   defaultOptions?: string[];
   defaultRules?: string[];
   applicableFormats?: ('T20' | 'ODI' | 'Test' | 'IPL')[];
+  category?: CricketEventCategory; // Category for grouping
 }> = [
-  // Powerplay Events (T20/ODI)
+  // ========== POWERPLAY EVENTS ==========
   {
     title: 'Powerplay Runs (First 6 Overs)',
     description: 'Predict the total runs scored in the powerplay (first 6 overs).',
     eventType: 'powerplay_runs',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Powerplay Events',
     defaultOptions: ['0-30', '31-40', '41-50', '51-60', '61+'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -214,6 +229,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'powerplay_wickets',
     defaultPoints: 40,
     difficultyLevel: 'easy',
+    category: 'Powerplay Events',
     defaultOptions: ['0', '1', '2', '3', '4+'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -223,6 +239,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'powerplay_boundaries',
     defaultPoints: 35,
     difficultyLevel: 'easy',
+    category: 'Powerplay Events',
     defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9+'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -232,17 +249,19 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'powerplay_sixes',
     defaultPoints: 45,
     difficultyLevel: 'medium',
+    category: 'Powerplay Events',
     defaultOptions: ['0', '1-2', '3-4', '5-6', '7+'],
     applicableFormats: ['T20', 'ODI'],
   },
   
-  // Batting Events
+  // ========== BATTING EVENTS ==========
   {
     title: 'First Ball Runs',
     description: 'Predict the runs scored off the first ball of the match.',
     eventType: 'first_ball_runs',
     defaultPoints: 25,
     difficultyLevel: 'easy',
+    category: 'Batting Events',
     defaultOptions: ['0', '1', '2', '3', '4', '6', 'Wicket'],
   },
   {
@@ -251,6 +270,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_boundary',
     defaultPoints: 30,
     difficultyLevel: 'easy',
+    category: 'Batting Events',
     defaultOptions: ['Over 1', 'Over 2', 'Over 3', 'Over 4', 'Over 5+'],
   },
   {
@@ -259,6 +279,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_six',
     defaultPoints: 35,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['Over 1-2', 'Over 3-4', 'Over 5-6', 'Over 7-10', 'Over 11+'],
   },
   {
@@ -267,6 +288,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_wicket',
     defaultPoints: 40,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['Over 1-3', 'Over 4-6', 'Over 7-10', 'Over 11-15', 'Over 16+'],
   },
   {
@@ -275,6 +297,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_50_partnership',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['Over 1-5', 'Over 6-10', 'Over 11-15', 'Over 16-20', 'No 50 partnership'],
   },
   {
@@ -283,6 +306,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_100_partnership',
     defaultPoints: 75,
     difficultyLevel: 'hard',
+    category: 'Batting Events',
     defaultOptions: ['Over 1-10', 'Over 11-20', 'Over 21-30', 'Over 31+', 'No 100 partnership'],
   },
   {
@@ -291,6 +315,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'highest_individual_score',
     defaultPoints: 60,
     difficultyLevel: 'medium',
+    category: 'Player Performance',
     defaultOptions: ['0-30', '31-50', '51-70', '71-100', '101+'],
   },
   {
@@ -299,6 +324,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'most_boundaries',
     defaultPoints: 30,
     difficultyLevel: 'easy',
+    category: 'Batting Events',
     defaultOptions: ['Team 1', 'Team 2', 'Tie'],
   },
   {
@@ -307,6 +333,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'most_sixes',
     defaultPoints: 35,
     difficultyLevel: 'easy',
+    category: 'Batting Events',
     defaultOptions: ['Team 1', 'Team 2', 'Tie'],
   },
   {
@@ -315,16 +342,17 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'strike_rate_range',
     defaultPoints: 45,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['Below 100', '100-120', '121-150', '151-180', '181+'],
   },
   
-  // Bowling Events
   {
     title: 'First Wicket Bowler',
     description: 'Predict which bowler will take the first wicket.',
     eventType: 'first_wicket_bowler',
     defaultPoints: 50,
     difficultyLevel: 'hard',
+    category: 'Bowling Events',
     defaultOptions: ['Bowler 1', 'Bowler 2', 'Bowler 3', 'Bowler 4', 'Other'],
   },
   {
@@ -333,6 +361,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'most_wickets',
     defaultPoints: 60,
     difficultyLevel: 'hard',
+    category: 'Bowling Events',
     defaultOptions: ['Bowler 1', 'Bowler 2', 'Bowler 3', 'Bowler 4', 'Tie'],
   },
   {
@@ -341,6 +370,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'best_economy',
     defaultPoints: 55,
     difficultyLevel: 'hard',
+    category: 'Bowling Events',
     defaultOptions: ['Below 4', '4-5', '5-6', '6-7', '7+'],
   },
   {
@@ -349,6 +379,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'maiden_overs',
     defaultPoints: 40,
     difficultyLevel: 'medium',
+    category: 'Bowling Events',
     defaultOptions: ['0', '1-2', '3-4', '5-6', '7+'],
   },
   {
@@ -357,6 +388,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'hat_trick',
     defaultPoints: 100,
     difficultyLevel: 'hard',
+    category: 'Special Events',
     defaultOptions: ['Yes', 'No'],
   },
   {
@@ -365,16 +397,18 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_5_wicket_haul',
     defaultPoints: 80,
     difficultyLevel: 'hard',
+    category: 'Bowling Events',
     defaultOptions: ['Yes', 'No'],
   },
   
-  // Match Outcome Events
+  // ========== MATCH OUTCOME EVENTS ==========
   {
     title: 'Toss Winner',
     description: 'Predict which team will win the toss.',
     eventType: 'toss_winner',
     defaultPoints: 20,
     difficultyLevel: 'easy',
+    category: 'Match Outcome',
     defaultOptions: ['Team 1', 'Team 2'],
   },
   {
@@ -383,6 +417,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'toss_decision',
     defaultPoints: 25,
     difficultyLevel: 'easy',
+    category: 'Match Outcome',
     defaultOptions: ['Bat', 'Bowl', 'Field'],
   },
   {
@@ -391,6 +426,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'match_winner',
     defaultPoints: 100,
     difficultyLevel: 'medium',
+    category: 'Match Outcome',
     defaultOptions: ['Team 1', 'Team 2', 'Tie', 'No Result'],
   },
   {
@@ -399,6 +435,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'win_margin',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Match Outcome',
     defaultOptions: ['1-20 runs', '21-40 runs', '41-60 runs', '61+ runs', '1-3 wickets', '4-6 wickets', '7+ wickets'],
   },
   {
@@ -407,6 +444,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'win_by_wickets_or_runs',
     defaultPoints: 30,
     difficultyLevel: 'easy',
+    category: 'Match Outcome',
     defaultOptions: ['By Runs', 'By Wickets', 'Tie/No Result'],
   },
   {
@@ -415,6 +453,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_runs',
     defaultPoints: 80,
     difficultyLevel: 'hard',
+    category: 'Match Outcome',
     defaultOptions: ['0-200', '201-300', '301-400', '401-500', '501+'],
   },
   {
@@ -423,6 +462,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Match Outcome',
     defaultOptions: ['0-5', '6-10', '11-15', '16-20', '21+'],
   },
   {
@@ -431,6 +471,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_fours',
     defaultPoints: 45,
     difficultyLevel: 'medium',
+    category: 'Match Outcome',
     defaultOptions: ['0-10', '11-20', '21-30', '31-40', '41+'],
   },
   {
@@ -439,6 +480,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_sixes',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Match Outcome',
     defaultOptions: ['0-5', '6-10', '11-15', '16-20', '21+'],
   },
   {
@@ -447,16 +489,17 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_extras',
     defaultPoints: 40,
     difficultyLevel: 'medium',
+    category: 'Match Outcome',
     defaultOptions: ['0-10', '11-20', '21-30', '31-40', '41+'],
   },
   
-  // Innings Events
   {
     title: 'First Innings Score',
     description: 'Predict the total score in the first innings.',
     eventType: 'first_innings_score',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Innings Events',
     defaultOptions: ['0-100', '101-150', '151-200', '201-250', '251+'],
   },
   {
@@ -465,6 +508,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'second_innings_score',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Innings Events',
     defaultOptions: ['0-100', '101-150', '151-200', '201-250', '251+'],
   },
   {
@@ -473,6 +517,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_innings_wickets',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Innings Events',
     defaultOptions: ['0-3', '4-6', '7-9', '10 (All Out)'],
   },
   {
@@ -481,16 +526,18 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'second_innings_wickets',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Innings Events',
     defaultOptions: ['0-3', '4-6', '7-9', '10 (All Out)'],
   },
   
-  // Test Match Specific
+  // ========== TEST MATCH SPECIFIC ==========
   {
     title: 'First Innings Lead',
     description: 'Predict which team will have the first innings lead (Test matches).',
     eventType: 'first_innings_lead',
     defaultPoints: 60,
     difficultyLevel: 'medium',
+    category: 'Innings Events',
     defaultOptions: ['Team 1', 'Team 2', 'No Lead'],
     applicableFormats: ['Test'],
   },
@@ -500,6 +547,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'follow_on',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Special Events',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['Test'],
   },
@@ -509,6 +557,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'declaration',
     defaultPoints: 65,
     difficultyLevel: 'medium',
+    category: 'Special Events',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['Test'],
   },
@@ -518,6 +567,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'century_count',
     defaultPoints: 75,
     difficultyLevel: 'hard',
+    category: 'Player Performance',
     defaultOptions: ['0', '1', '2', '3', '4+'],
   },
   {
@@ -526,16 +576,18 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'fifty_count',
     defaultPoints: 60,
     difficultyLevel: 'medium',
+    category: 'Player Performance',
     defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9+'],
   },
   
-  // ODI Specific
+  // ========== ODI SPECIFIC ==========
   {
     title: '300+ Score',
     description: 'Predict if any team will score 300+ runs (ODI).',
     eventType: '300_plus_score',
     defaultPoints: 60,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['ODI'],
   },
@@ -545,6 +597,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: '400_plus_score',
     defaultPoints: 100,
     difficultyLevel: 'hard',
+    category: 'Batting Events',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['ODI'],
   },
@@ -554,17 +607,19 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'chase_successful',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Match Outcome',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['ODI', 'T20'],
   },
   
-  // T20/IPL Specific
+  // ========== T20/IPL SPECIFIC ==========
   {
     title: '200+ Score',
     description: 'Predict if any team will score 200+ runs (T20/IPL).',
     eventType: '200_plus_score',
     defaultPoints: 70,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['T20', 'IPL'],
   },
@@ -574,6 +629,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'fastest_50',
     defaultPoints: 80,
     difficultyLevel: 'hard',
+    category: 'Player Performance',
     defaultOptions: ['1-20 balls', '21-30 balls', '31-40 balls', '41-50 balls', '51+ balls'],
     applicableFormats: ['T20', 'IPL'],
   },
@@ -583,6 +639,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'fastest_100',
     defaultPoints: 100,
     difficultyLevel: 'hard',
+    category: 'Player Performance',
     defaultOptions: ['1-40 balls', '41-50 balls', '51-60 balls', '61-70 balls', 'No 100'],
     applicableFormats: ['T20', 'IPL'],
   },
@@ -592,6 +649,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'super_over',
     defaultPoints: 90,
     difficultyLevel: 'hard',
+    category: 'Special Events',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['T20', 'IPL'],
   },
@@ -601,6 +659,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'drs_reviews',
     defaultPoints: 40,
     difficultyLevel: 'medium',
+    category: 'Special Events',
     defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9+'],
   },
   {
@@ -609,17 +668,19 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'timeout_taken',
     defaultPoints: 30,
     difficultyLevel: 'easy',
+    category: 'Special Events',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['IPL'],
   },
   // ========== NEW ADDITIONS - EXPANDED CRICKET EVENTS ==========
-  // Powerplay Variations
+  // ========== POWERPLAY VARIATIONS ==========
   {
     title: 'Powerplay Dot Balls',
     description: 'Predict the total number of dot balls in the powerplay.',
     eventType: 'powerplay_runs',
     defaultPoints: 40,
     difficultyLevel: 'medium',
+    category: 'Powerplay Events',
     defaultOptions: ['0-5', '6-10', '11-15', '16-20', '21+'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -629,6 +690,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'powerplay_runs',
     defaultPoints: 45,
     difficultyLevel: 'medium',
+    category: 'Powerplay Events',
     defaultOptions: ['Below 5', '5-7', '7-9', '9-11', '11+'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -638,16 +700,18 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'powerplay_wickets',
     defaultPoints: 50,
     difficultyLevel: 'hard',
+    category: 'Powerplay Events',
     defaultOptions: ['Bowled', 'Caught', 'LBW', 'Run Out', 'Stumped', 'No Wicket'],
     applicableFormats: ['T20', 'ODI'],
   },
-  // Batting Milestones & Records
+  // ========== BATTING MILESTONES & RECORDS ==========
   {
     title: 'First 10 Overs Score',
     description: 'Predict the total runs scored in first 10 overs.',
     eventType: 'total_runs',
     defaultPoints: 65,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['0-50', '51-70', '71-90', '91-110', '111+'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -657,6 +721,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_runs',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Batting Events',
     defaultOptions: ['0-30', '31-50', '51-70', '71-90', '91+'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -666,6 +731,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_runs',
     defaultPoints: 75,
     difficultyLevel: 'hard',
+    category: 'Batting Events',
     defaultOptions: ['0-25', '26-40', '41-55', '56-70', '71+'],
     applicableFormats: ['T20', 'IPL'],
   },
@@ -675,6 +741,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 55,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['0', '1', '2', '3', '4+'],
   },
   {
@@ -683,6 +750,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 60,
     difficultyLevel: 'hard',
+    category: 'Batting Events',
     defaultOptions: ['0', '1', '2', '3+'],
   },
   {
@@ -691,6 +759,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_100_partnership',
     defaultPoints: 85,
     difficultyLevel: 'hard',
+    category: 'Batting Events',
     defaultOptions: ['0-30', '31-50', '51-75', '76-100', '101+'],
   },
   {
@@ -699,6 +768,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_50_partnership',
     defaultPoints: 70,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['0', '1', '2', '3', '4+'],
   },
   {
@@ -707,6 +777,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'highest_individual_score',
     defaultPoints: 150,
     difficultyLevel: 'hard',
+    category: 'Player Performance',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['ODI', 'Test'],
   },
@@ -716,6 +787,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'highest_individual_score',
     defaultPoints: 100,
     difficultyLevel: 'hard',
+    category: 'Player Performance',
     defaultOptions: ['Yes', 'No'],
   },
   {
@@ -724,16 +796,18 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'fastest_50',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Player Performance',
     defaultOptions: ['1-10 balls', '11-15 balls', '16-20 balls', '21-25 balls', '26+ balls'],
     applicableFormats: ['T20', 'IPL'],
   },
-  // Bowling Variations & Records
+  // ========== BOWLING VARIATIONS & RECORDS ==========
   {
     title: 'Most Dot Balls',
     description: 'Predict which team will bowl more dot balls.',
     eventType: 'maiden_overs',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Bowling Events',
     defaultOptions: ['Team 1', 'Team 2', 'Tie'],
   },
   {
@@ -742,6 +816,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_extras',
     defaultPoints: 35,
     difficultyLevel: 'easy',
+    category: 'Bowling Events',
     defaultOptions: ['Team 1', 'Team 2', 'Tie'],
   },
   {
@@ -750,6 +825,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_extras',
     defaultPoints: 40,
     difficultyLevel: 'easy',
+    category: 'Bowling Events',
     defaultOptions: ['Team 1', 'Team 2', 'Tie'],
   },
   {
@@ -758,6 +834,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'best_economy',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Bowling Events',
     defaultOptions: ['Below 10', '10-15', '15-20', '20-25', '25+'],
   },
   {
@@ -766,6 +843,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'best_economy',
     defaultPoints: 65,
     difficultyLevel: 'hard',
+    category: 'Bowling Events',
     defaultOptions: ['Below 10', '10-15', '15-20', '20-25', '25+'],
   },
   {
@@ -774,6 +852,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'first_5_wicket_haul',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Bowling Events',
     defaultOptions: ['Yes', 'No'],
   },
   {
@@ -782,6 +861,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'most_wickets',
     defaultPoints: 75,
     difficultyLevel: 'hard',
+    category: 'Bowling Events',
     defaultOptions: ['0', '1', '2', '3', '4+'],
   },
   {
@@ -790,6 +870,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 55,
     difficultyLevel: 'medium',
+    category: 'Bowling Events',
     defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9+'],
   },
   {
@@ -798,6 +879,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 50,
     difficultyLevel: 'easy',
+    category: 'Bowling Events',
     defaultOptions: ['0-3', '4-6', '7-9', '10-12', '13+'],
   },
   {
@@ -806,6 +888,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 60,
     difficultyLevel: 'hard',
+    category: 'Bowling Events',
     defaultOptions: ['0', '1', '2', '3', '4+'],
   },
   {
@@ -814,6 +897,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 55,
     difficultyLevel: 'medium',
+    category: 'Fielding Events',
     defaultOptions: ['0', '1', '2', '3', '4+'],
   },
   {
@@ -822,15 +906,17 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 65,
     difficultyLevel: 'hard',
+    category: 'Fielding Events',
     defaultOptions: ['0', '1', '2', '3+'],
   },
-  // Fielding Events
+  // ========== FIELDING EVENTS ==========
   {
     title: 'Most Catches',
     description: 'Predict which team will take more catches.',
     eventType: 'total_wickets',
     defaultPoints: 45,
     difficultyLevel: 'easy',
+    category: 'Fielding Events',
     defaultOptions: ['Team 1', 'Team 2', 'Tie'],
   },
   {
@@ -839,6 +925,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Fielding Events',
     defaultOptions: ['Team 1', 'Team 2', 'Tie'],
   },
   {
@@ -847,15 +934,17 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_wickets',
     defaultPoints: 60,
     difficultyLevel: 'hard',
+    category: 'Fielding Events',
     defaultOptions: ['0', '1-2', '3-4', '5-6', '7+'],
   },
-  // Over-by-Over Predictions
+  // ========== OVER-BY-OVER PREDICTIONS ==========
   {
     title: 'Highest Scoring Over',
     description: 'Predict the range of runs in the highest scoring over.',
     eventType: 'total_runs',
     defaultPoints: 65,
     difficultyLevel: 'medium',
+    category: 'Batting Events',
     defaultOptions: ['0-10', '11-15', '16-20', '21-25', '26+'],
   },
   {
@@ -864,6 +953,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'best_economy',
     defaultPoints: 60,
     difficultyLevel: 'medium',
+    category: 'Bowling Events',
     defaultOptions: ['0-10', '11-15', '16-20', '21-25', '26+'],
   },
   {
@@ -872,15 +962,17 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'maiden_overs',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Bowling Events',
     defaultOptions: ['0', '1-2', '3-4', '5-6', '7+'],
   },
-  // Match Situation Events
+  // ========== MATCH SITUATION EVENTS ==========
   {
     title: 'Required Run Rate (10 Overs)',
     description: 'Predict the required run rate after 10 overs (if chasing).',
     eventType: 'chase_successful',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Match Outcome',
     defaultOptions: ['Below 6', '6-8', '8-10', '10-12', '12+'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -890,6 +982,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'chase_successful',
     defaultPoints: 75,
     difficultyLevel: 'hard',
+    category: 'Match Outcome',
     defaultOptions: ['Below 8', '8-10', '10-12', '12-15', '15+'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -899,6 +992,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'chase_successful',
     defaultPoints: 65,
     difficultyLevel: 'medium',
+    category: 'Match Outcome',
     defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9-10'],
     applicableFormats: ['T20', 'ODI'],
   },
@@ -908,16 +1002,18 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'chase_successful',
     defaultPoints: 70,
     difficultyLevel: 'medium',
+    category: 'Match Outcome',
     defaultOptions: ['0-2', '3-4', '5-6', '7-8', '9-10'],
     applicableFormats: ['T20', 'ODI'],
   },
-  // Player Performance Events
+  // ========== PLAYER PERFORMANCE EVENTS ==========
   {
     title: 'Man of the Match',
     description: 'Predict which type of player will win Man of the Match.',
     eventType: 'match_winner',
     defaultPoints: 80,
     difficultyLevel: 'hard',
+    category: 'Player Performance',
     defaultOptions: ['Batsman', 'Bowler', 'All-Rounder', 'Wicket-Keeper'],
   },
   {
@@ -926,6 +1022,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'highest_individual_score',
     defaultPoints: 75,
     difficultyLevel: 'hard',
+    category: 'Player Performance',
     defaultOptions: ['0-30', '31-50', '51-75', '76-100', '101+'],
   },
   {
@@ -934,15 +1031,17 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'most_wickets',
     defaultPoints: 70,
     difficultyLevel: 'hard',
+    category: 'Player Performance',
     defaultOptions: ['0-1', '2', '3', '4', '5+'],
   },
-  // Special Events
+  // ========== SPECIAL EVENTS ==========
   {
     title: 'Free Hit Count',
     description: 'Predict the total number of free hits in the match.',
     eventType: 'total_extras',
     defaultPoints: 45,
     difficultyLevel: 'medium',
+    category: 'Special Events',
     defaultOptions: ['0', '1', '2', '3', '4+'],
     applicableFormats: ['T20', 'ODI', 'IPL'],
   },
@@ -952,6 +1051,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'total_runs',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Special Events',
     defaultOptions: ['0', '1-5', '6-10', '11-15', '16+'],
     applicableFormats: ['T20', 'ODI', 'IPL'],
   },
@@ -961,6 +1061,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'drs_reviews',
     defaultPoints: 55,
     difficultyLevel: 'hard',
+    category: 'Special Events',
     defaultOptions: ['Yes', 'No'],
   },
   {
@@ -969,15 +1070,17 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'drs_reviews',
     defaultPoints: 60,
     difficultyLevel: 'hard',
+    category: 'Special Events',
     defaultOptions: ['0', '1', '2', '3', '4+'],
   },
-  // IPL Specific Events
+  // ========== IPL SPECIFIC EVENTS ==========
   {
     title: 'Impact Player Used',
     description: 'Predict if any team will use an impact player substitution (IPL).',
     eventType: 'timeout_taken',
     defaultPoints: 35,
     difficultyLevel: 'easy',
+    category: 'Special Events',
     defaultOptions: ['Yes', 'No'],
     applicableFormats: ['IPL'],
   },
@@ -987,6 +1090,7 @@ export const CRICKET_EVENT_TEMPLATES: Array<{
     eventType: 'timeout_taken',
     defaultPoints: 50,
     difficultyLevel: 'medium',
+    category: 'Special Events',
     defaultOptions: ['Over 7-9', 'Over 10-12', 'Over 13-15', 'Over 16-18', 'Not Taken'],
     applicableFormats: ['IPL'],
   },

@@ -45,6 +45,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useState, useMemo } from 'react';
 
 const eventSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -184,6 +186,36 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
   const entryFeeType = form.watch('entryFee.type') || 'free';
   const campaignStartDate = form.watch('startDate');
   const campaignEndDate = form.watch('endDate');
+  
+  // State for bulk selection
+  const [selectedEventIndices, setSelectedEventIndices] = useState<Set<number>>(new Set());
+  const [selectedComparisonIndices, setSelectedComparisonIndices] = useState<Set<number>>(new Set());
+  
+  // Group events by category with index tracking
+  const eventsByCategory = useMemo(() => {
+    const grouped: Record<string, Array<{ template: typeof EVENT_TEMPLATES[0]; index: number }>> = {};
+    EVENT_TEMPLATES.forEach((event, index) => {
+      const category = (event as any).category || 'Other';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push({ template: event, index });
+    });
+    return grouped;
+  }, []);
+  
+  // Group comparison events by category with index tracking
+  const comparisonEventsByCategory = useMemo(() => {
+    const grouped: Record<string, Array<{ template: typeof COMPARISON_EVENT_TEMPLATES[0]; index: number }>> = {};
+    COMPARISON_EVENT_TEMPLATES.forEach((event, index) => {
+      const category = (event as any).category || 'Other';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push({ template: event, index });
+    });
+    return grouped;
+  }, []);
 
   // Auto-update event dates only when campaign dates are first set (not on every change)
   useEffect(() => {
@@ -1236,45 +1268,120 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
                       Add Event
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Add Event from Template</DialogTitle>
                       <DialogDescription>
-                        Select a predefined event template to add to this campaign.
+                        Select events to add. Use checkboxes for bulk selection or click individual events.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="flex gap-2 mt-4 mb-4">
                       <Button
                         type="button"
                         variant="default"
-                        onClick={addAllEventsFromTemplates}
-                        className="w-full"
+                        onClick={() => {
+                          selectedEventIndices.forEach(index => {
+                            addEventFromTemplate(EVENT_TEMPLATES[index]);
+                          });
+                          setSelectedEventIndices(new Set());
+                        }}
+                        disabled={selectedEventIndices.size === 0}
+                        className="flex-1"
                       >
-                        Select All Events ({EVENT_TEMPLATES.length})
+                        Add Selected ({selectedEventIndices.size})
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          if (selectedEventIndices.size === EVENT_TEMPLATES.length) {
+                            setSelectedEventIndices(new Set());
+                          } else {
+                            setSelectedEventIndices(new Set(EVENT_TEMPLATES.map((_, i) => i)));
+                          }
+                        }}
+                        className="flex-1"
+                      >
+                        {selectedEventIndices.size === EVENT_TEMPLATES.length ? 'Deselect All' : 'Select All'}
                       </Button>
                     </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      {EVENT_TEMPLATES.map((template, index) => (
-                        <Button
-                          key={index}
-                          type="button"
-                          variant="outline"
-                          className="h-auto p-4 justify-start text-left"
-                          onClick={() => {
-                            addEventFromTemplate(template);
-                          }}
-                        >
-                          <div className="flex-1">
-                            <div className="font-semibold">{template.title}</div>
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {template.description}
-                            </div>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="secondary">{template.eventType}</Badge>
-                              <Badge variant="outline">{template.defaultPoints} points</Badge>
-                            </div>
+                    <div className="space-y-6">
+                      {Object.entries(eventsByCategory).map(([category, events]) => (
+                        <div key={category} className="space-y-2">
+                          <div className="flex items-center justify-between border-b pb-2">
+                            <h3 className="font-semibold text-lg">{category}</h3>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const categoryIndices = events.map(e => e.index);
+                                const allSelected = categoryIndices.every(i => selectedEventIndices.has(i));
+                                if (allSelected) {
+                                  const newSet = new Set(selectedEventIndices);
+                                  categoryIndices.forEach(i => newSet.delete(i));
+                                  setSelectedEventIndices(newSet);
+                                } else {
+                                  const newSet = new Set(selectedEventIndices);
+                                  categoryIndices.forEach(i => newSet.add(i));
+                                  setSelectedEventIndices(newSet);
+                                }
+                              }}
+                            >
+                              {events.every(e => selectedEventIndices.has(e.index)) ? 'Deselect Category' : 'Select Category'}
+                            </Button>
                           </div>
-                        </Button>
+                          <div className="grid grid-cols-1 gap-2">
+                            {events.map(({ template, index }) => {
+                              const isSelected = selectedEventIndices.has(index);
+                              return (
+                                <div
+                                  key={index}
+                                  className={cn(
+                                    "flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors",
+                                    isSelected && "bg-primary/5 border-primary"
+                                  )}
+                                  onClick={() => {
+                                    const newSet = new Set(selectedEventIndices);
+                                    if (isSelected) {
+                                      newSet.delete(index);
+                                    } else {
+                                      newSet.add(index);
+                                    }
+                                    setSelectedEventIndices(newSet);
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      const newSet = new Set(selectedEventIndices);
+                                      if (checked) {
+                                        newSet.add(index);
+                                      } else {
+                                        newSet.delete(index);
+                                      }
+                                      setSelectedEventIndices(newSet);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <div className="flex-1">
+                                    <div className="font-semibold">{template.title}</div>
+                                    <div className="text-sm text-muted-foreground mt-1">
+                                      {template.description}
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <Badge variant="secondary">{template.eventType}</Badge>
+                                      <Badge variant="outline">{template.defaultPoints} points</Badge>
+                                      {template.difficultyLevel && (
+                                        <Badge variant="secondary">{template.difficultyLevel}</Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </DialogContent>
@@ -1288,11 +1395,11 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
                         Add Comparison Events
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Add Comparison Events</DialogTitle>
                         <DialogDescription>
-                          These events compare movies head-to-head. Options will be populated with your campaign movies.
+                          These events compare movies head-to-head. Options will be populated with your campaign movies. Use checkboxes for bulk selection.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="flex gap-2 mt-4 mb-4">
@@ -1300,38 +1407,108 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
                           type="button"
                           variant="default"
                           onClick={() => {
-                            COMPARISON_EVENT_TEMPLATES.forEach(template => addComparisonEventFromTemplate(template));
+                            selectedComparisonIndices.forEach(index => {
+                              addComparisonEventFromTemplate(COMPARISON_EVENT_TEMPLATES[index]);
+                            });
+                            setSelectedComparisonIndices(new Set());
                           }}
-                          className="w-full"
+                          disabled={selectedComparisonIndices.size === 0}
+                          className="flex-1"
                         >
-                          Select All Comparison Events ({COMPARISON_EVENT_TEMPLATES.length})
+                          Add Selected ({selectedComparisonIndices.size})
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            if (selectedComparisonIndices.size === COMPARISON_EVENT_TEMPLATES.length) {
+                              setSelectedComparisonIndices(new Set());
+                            } else {
+                              setSelectedComparisonIndices(new Set(COMPARISON_EVENT_TEMPLATES.map((_, i) => i)));
+                            }
+                          }}
+                          className="flex-1"
+                        >
+                          {selectedComparisonIndices.size === COMPARISON_EVENT_TEMPLATES.length ? 'Deselect All' : 'Select All'}
                         </Button>
                       </div>
-                      <div className="grid grid-cols-1 gap-2">
-                        {COMPARISON_EVENT_TEMPLATES.map((template, index) => (
-                          <Button
-                            key={index}
-                            type="button"
-                            variant="outline"
-                            className="h-auto p-4 justify-start text-left"
-                            onClick={() => {
-                              addComparisonEventFromTemplate(template);
-                            }}
-                          >
-                            <div className="flex-1">
-                              <div className="font-semibold">{template.title}</div>
-                              <div className="text-sm text-muted-foreground mt-1">
-                                {template.description}
-                              </div>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge variant="secondary">{template.eventType}</Badge>
-                                <Badge variant="outline">{template.defaultPoints} points</Badge>
-                                {template.isIndustryBattle && (
-                                  <Badge variant="destructive">Industry Battle</Badge>
-                                )}
-                              </div>
+                      <div className="space-y-6">
+                        {Object.entries(comparisonEventsByCategory).map(([category, events]) => (
+                          <div key={category} className="space-y-2">
+                            <div className="flex items-center justify-between border-b pb-2">
+                              <h3 className="font-semibold text-lg">{category}</h3>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const categoryIndices = events.map(e => e.index);
+                                  const allSelected = categoryIndices.every(i => selectedComparisonIndices.has(i));
+                                  if (allSelected) {
+                                    const newSet = new Set(selectedComparisonIndices);
+                                    categoryIndices.forEach(i => newSet.delete(i));
+                                    setSelectedComparisonIndices(newSet);
+                                  } else {
+                                    const newSet = new Set(selectedComparisonIndices);
+                                    categoryIndices.forEach(i => newSet.add(i));
+                                    setSelectedComparisonIndices(newSet);
+                                  }
+                                }}
+                              >
+                                {events.every(e => selectedComparisonIndices.has(e.index)) ? 'Deselect Category' : 'Select Category'}
+                              </Button>
                             </div>
-                          </Button>
+                            <div className="grid grid-cols-1 gap-2">
+                              {events.map(({ template, index }) => {
+                                const isSelected = selectedComparisonIndices.has(index);
+                                return (
+                                  <div
+                                    key={index}
+                                    className={cn(
+                                      "flex items-start gap-3 p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors",
+                                      isSelected && "bg-primary/5 border-primary"
+                                    )}
+                                    onClick={() => {
+                                      const newSet = new Set(selectedComparisonIndices);
+                                      if (isSelected) {
+                                        newSet.delete(index);
+                                      } else {
+                                        newSet.add(index);
+                                      }
+                                      setSelectedComparisonIndices(newSet);
+                                    }}
+                                  >
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={(checked) => {
+                                        const newSet = new Set(selectedComparisonIndices);
+                                        if (checked) {
+                                          newSet.add(index);
+                                        } else {
+                                          newSet.delete(index);
+                                        }
+                                        setSelectedComparisonIndices(newSet);
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                    <div className="flex-1">
+                                      <div className="font-semibold">{template.title}</div>
+                                      <div className="text-sm text-muted-foreground mt-1">
+                                        {template.description}
+                                      </div>
+                                      <div className="flex items-center gap-2 mt-2">
+                                        <Badge variant="secondary">{template.eventType}</Badge>
+                                        <Badge variant="outline">{template.defaultPoints} points</Badge>
+                                        {template.isIndustryBattle && (
+                                          <Badge variant="destructive">Industry Battle</Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </DialogContent>

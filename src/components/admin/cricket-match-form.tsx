@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -122,6 +123,7 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
 
   const selectedFormat = form.watch('format');
   const selectedTournamentId = form.watch('tournamentId');
+  const [selectedEventIndices, setSelectedEventIndices] = React.useState<Set<number>>(new Set());
 
   // Filter events by format
   const availableTemplates = CRICKET_EVENT_TEMPLATES.filter((template) => {
@@ -130,6 +132,19 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
     }
     return template.applicableFormats.includes(selectedFormat as 'T20' | 'ODI' | 'Test');
   });
+
+  // Group events by category
+  const groupedEvents = React.useMemo(() => {
+    const grouped: Record<string, Array<{ template: typeof CRICKET_EVENT_TEMPLATES[0]; index: number }>> = {};
+    availableTemplates.forEach((template, index) => {
+      const category = template.category || 'Uncategorized';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push({ template, index });
+    });
+    return grouped;
+  }, [availableTemplates]);
 
   const addEventFromTemplate = (template: typeof CRICKET_EVENT_TEMPLATES[0]) => {
     append({
@@ -142,6 +157,37 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
       options: template.defaultOptions || [],
       rules: template.defaultRules || [],
     });
+  };
+
+  const toggleEventSelection = (index: number) => {
+    const newSet = new Set(selectedEventIndices);
+    if (newSet.has(index)) {
+      newSet.delete(index);
+    } else {
+      newSet.add(index);
+    }
+    setSelectedEventIndices(newSet);
+  };
+
+  const toggleCategorySelection = (category: string) => {
+    const categoryEvents = groupedEvents[category] || [];
+    const categoryIndices = new Set(categoryEvents.map(e => e.index));
+    const allSelected = categoryIndices.every(idx => selectedEventIndices.has(idx));
+    
+    const newSet = new Set(selectedEventIndices);
+    if (allSelected) {
+      categoryIndices.forEach(idx => newSet.delete(idx));
+    } else {
+      categoryIndices.forEach(idx => newSet.add(idx));
+    }
+    setSelectedEventIndices(newSet);
+  };
+
+  const addSelectedEvents = () => {
+    selectedEventIndices.forEach(index => {
+      addEventFromTemplate(availableTemplates[index]);
+    });
+    setSelectedEventIndices(new Set());
   };
 
   return (
@@ -446,40 +492,92 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
                     Add Event
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Add Event from Template</DialogTitle>
+                    <DialogTitle>Add Events from Templates</DialogTitle>
                     <DialogDescription>
-                      Select from {availableTemplates.length} predefined events for {selectedFormat} format.
+                      Select one or multiple events from {availableTemplates.length} predefined events for {selectedFormat} format.
+                      {selectedEventIndices.size > 0 && (
+                        <span className="ml-2 font-semibold text-primary">
+                          {selectedEventIndices.size} selected
+                        </span>
+                      )}
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid grid-cols-1 gap-2 mt-4">
-                    {availableTemplates.map((template, index) => (
-                      <Button
-                        key={index}
-                        type="button"
-                        variant="outline"
-                        className="h-auto p-4 justify-start text-left"
-                        onClick={() => {
-                          addEventFromTemplate(template);
-                        }}
-                      >
-                        <div className="flex-1">
-                          <div className="font-semibold">{template.title}</div>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            {template.description}
+                  
+                  <div className="space-y-6 mt-4">
+                    {Object.entries(groupedEvents).map(([category, events]) => {
+                      const categoryIndices = new Set(events.map(e => e.index));
+                      const allSelected = categoryIndices.size > 0 && categoryIndices.every(idx => selectedEventIndices.has(idx));
+                      const someSelected = Array.from(categoryIndices).some(idx => selectedEventIndices.has(idx));
+                      
+                      return (
+                        <div key={category} className="space-y-3">
+                          <div className="flex items-center justify-between border-b pb-2">
+                            <h3 className="font-semibold text-lg">{category}</h3>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleCategorySelection(category)}
+                            >
+                              {allSelected ? 'Deselect All' : 'Select All'}
+                            </Button>
                           </div>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="secondary">{template.eventType}</Badge>
-                            <Badge variant="outline">{template.defaultPoints} points</Badge>
-                            {template.difficultyLevel && (
-                              <Badge variant="outline">{template.difficultyLevel}</Badge>
-                            )}
+                          <div className="grid grid-cols-1 gap-2">
+                            {events.map(({ template, index }) => (
+                              <div
+                                key={index}
+                                className={cn(
+                                  "flex items-start space-x-3 p-3 rounded-lg border",
+                                  selectedEventIndices.has(index) && "bg-accent"
+                                )}
+                              >
+                                <Checkbox
+                                  checked={selectedEventIndices.has(index)}
+                                  onCheckedChange={() => toggleEventSelection(index)}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold">{template.title}</div>
+                                  <div className="text-sm text-muted-foreground mt-1">
+                                    {template.description}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Badge variant="secondary">{template.eventType}</Badge>
+                                    <Badge variant="outline">{template.defaultPoints} points</Badge>
+                                    {template.difficultyLevel && (
+                                      <Badge variant="outline">{template.difficultyLevel}</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </Button>
-                    ))}
+                      );
+                    })}
                   </div>
+
+                  {selectedEventIndices.size > 0 && (
+                    <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setSelectedEventIndices(new Set())}
+                      >
+                        Clear Selection
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          addSelectedEvents();
+                        }}
+                      >
+                        Add {selectedEventIndices.size} Event{selectedEventIndices.size !== 1 ? 's' : ''}
+                      </Button>
+                    </div>
+                  )}
                 </DialogContent>
               </Dialog>
             </div>
