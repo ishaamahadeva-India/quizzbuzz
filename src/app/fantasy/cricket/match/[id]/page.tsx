@@ -169,7 +169,7 @@ function ScoringRulesCard() {
     )
 }
 
-function PreMatchView({ onLockSelections, players }: { onLockSelections: () => void, players: (CricketerProfile & {id: string})[] }) {
+function PreMatchView({ onLockSelections, players, match }: { onLockSelections: () => void, players: (CricketerProfile & {id: string})[], match: FantasyMatch }) {
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [isLocked, setIsLocked] = useState(false);
 
@@ -227,22 +227,35 @@ function PreMatchView({ onLockSelections, players }: { onLockSelections: () => v
             <p className="text-sm text-muted-foreground mb-4">
               {role.description}
             </p>
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {players.map((player) => (
-                <PlayerSelectionCard
-                  key={`${role.id}-${player.id}`}
-                  player={player}
-                  isSelected={selections[role.id] === player.id}
-                  isDisabled={
-                    isLocked ||
-                    (!!selections[role.id] && selections[role.id] !== player.id)
-                  }
-                  onSelect={() =>
-                    !isLocked && handleSelectPlayer(role.id, player.id)
-                  }
-                />
-              ))}
-            </div>
+            {players.length === 0 ? (
+              <Card className="p-6 text-center">
+                <CardContent>
+                  <p className="text-muted-foreground mb-2">
+                    No players found for {match.team1} vs {match.team2}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Please ensure players are added to the cricketers collection with matching country/team names.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {players.map((player) => (
+                  <PlayerSelectionCard
+                    key={`${role.id}-${player.id}`}
+                    player={player}
+                    isSelected={selections[role.id] === player.id}
+                    isDisabled={
+                      isLocked ||
+                      (!!selections[role.id] && selections[role.id] !== player.id)
+                    }
+                    onSelect={() =>
+                      !isLocked && handleSelectPlayer(role.id, player.id)
+                    }
+                  />
+                ))}
+              </div>
+            )}
           </div>
         ))}
         
@@ -688,7 +701,7 @@ export default function CricketMatchPage() {
   const match = matchData ? { ...matchData, id } as FantasyMatch : null;
 
   const playersQuery = firestore ? collection(firestore, 'cricketers') : null;
-  const { data: players, isLoading: playersLoading } = useCollection(playersQuery);
+  const { data: allPlayers, isLoading: playersLoading } = useCollection(playersQuery);
 
   // Show loading state
   if (matchLoading || playersLoading) {
@@ -704,13 +717,61 @@ export default function CricketMatchPage() {
     return notFound();
   }
 
-  if (!players) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Skeleton className="h-full w-full" />
-      </div>
-    );
+  // Filter players by match teams (team1 and team2)
+  // If no players match, show all players as fallback
+  let filteredPlayers = allPlayers?.filter((player: any) => {
+    if (!player.country) return false;
+    // Match team names with player countries (case-insensitive)
+    const team1Lower = match.team1?.toLowerCase() || '';
+    const team2Lower = match.team2?.toLowerCase() || '';
+    const playerCountryLower = player.country?.toLowerCase() || '';
+    
+    // Common country/team name mappings
+    const countryMappings: Record<string, string[]> = {
+      'india': ['india', 'ind', 'indian'],
+      'new zealand': ['new zealand', 'nz', 'newzealand'],
+      'australia': ['australia', 'aus', 'australian'],
+      'england': ['england', 'eng', 'english'],
+      'south africa': ['south africa', 'sa', 'southafrica'],
+      'pakistan': ['pakistan', 'pak', 'pakistani'],
+      'bangladesh': ['bangladesh', 'ban', 'bangladeshi'],
+      'sri lanka': ['sri lanka', 'sl', 'srilanka'],
+      'west indies': ['west indies', 'wi', 'westindies'],
+      'afghanistan': ['afghanistan', 'afg', 'afghan'],
+    };
+    
+    // Check direct match
+    if (team1Lower.includes(playerCountryLower) || 
+        team2Lower.includes(playerCountryLower) ||
+        playerCountryLower.includes(team1Lower) ||
+        playerCountryLower.includes(team2Lower)) {
+      return true;
+    }
+    
+    // Check country mappings
+    for (const [country, variations] of Object.entries(countryMappings)) {
+      if (variations.some(v => team1Lower.includes(v) || team2Lower.includes(v))) {
+        if (variations.some(v => playerCountryLower.includes(v))) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }) || [];
+
+  // If no players match the teams, show all players as fallback
+  if (filteredPlayers.length === 0 && allPlayers && allPlayers.length > 0) {
+    filteredPlayers = allPlayers;
   }
+
+  // Add id to each player if not present
+  const playersWithId = filteredPlayers.map((player: any, index: number) => ({
+    ...player,
+    id: player.id || `player-${index}`,
+    name: player.name || `Player ${index + 1}`,
+    avatarUrl: player.avatarUrl || player.avatar || `https://picsum.photos/seed/${player.id || index}/400/400`,
+  }));
 
   const handleScoreUpdate = (points: number) => {
     setCurrentScore(prev => prev + points);
@@ -721,15 +782,15 @@ export default function CricketMatchPage() {
   const renderGameContent = () => {
     switch(matchPhase) {
       case 'pre-match':
-        return <PreMatchView onLockSelections={() => setMatchPhase('1st-innings')} players={players as any as (CricketerProfile & { id: string })[]} />;
+        return <PreMatchView onLockSelections={() => setMatchPhase('1st-innings')} players={playersWithId as any as (CricketerProfile & { id: string })[]} match={match} />;
       case '1st-innings':
-        return <FirstInningsView onInningsEnd={() => setMatchPhase('innings-break')} currentStreak={currentStreak} setStreak={setCurrentStreak} onScoreUpdate={handleScoreUpdate} players={players as any as (CricketerProfile & { id: string })[]} />;
+        return <FirstInningsView onInningsEnd={() => setMatchPhase('innings-break')} currentStreak={currentStreak} setStreak={setCurrentStreak} onScoreUpdate={handleScoreUpdate} players={playersWithId as any as (CricketerProfile & { id: string })[]} />;
       case 'innings-break':
         return <InningsBreakView onStartNextInnings={() => setMatchPhase('2nd-innings-selection')} />;
       case '2nd-innings-selection':
-        return <SecondInningsSelectionView onLockSelections={() => setMatchPhase('2nd-innings-live')} players={players as any as (CricketerProfile & { id: string })[]} />;
+        return <SecondInningsSelectionView onLockSelections={() => setMatchPhase('2nd-innings-live')} players={playersWithId as any as (CricketerProfile & { id: string })[]} />;
       case '2nd-innings-live':
-        return <FirstInningsView onInningsEnd={() => setMatchPhase('match-over')} currentStreak={currentStreak} setStreak={setCurrentStreak} onScoreUpdate={handleScoreUpdate} players={players as any as (CricketerProfile & { id: string })[]}/>; // Re-use for simulation
+        return <FirstInningsView onInningsEnd={() => setMatchPhase('match-over')} currentStreak={currentStreak} setStreak={setCurrentStreak} onScoreUpdate={handleScoreUpdate} players={playersWithId as any as (CricketerProfile & { id: string })[]}/>; // Re-use for simulation
       case 'match-over':
         return <Card><CardHeader><CardTitle>Match Over!</CardTitle><CardContent><p>Final leaderboard is now available.</p></CardContent></CardHeader></Card>;
       default:
