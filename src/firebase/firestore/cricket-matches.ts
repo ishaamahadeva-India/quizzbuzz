@@ -151,11 +151,43 @@ export function addMatchEvent(
   eventData: NewCricketEvent
 ) {
   const eventsCollection = collection(firestore, 'fantasy_matches', matchId, 'events');
-  const docToSave = {
-    ...eventData,
+  
+  // Remove undefined values to avoid Firestore errors
+  const docToSave: Record<string, any> = {
+    title: eventData.title,
+    description: eventData.description,
+    eventType: eventData.eventType,
+    status: eventData.status,
+    points: eventData.points,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
+
+  // Only include optional fields if they are defined
+  if (eventData.innings !== undefined) {
+    docToSave.innings = eventData.innings;
+  }
+  if (eventData.startTime !== undefined) {
+    docToSave.startTime = eventData.startTime;
+  }
+  if (eventData.endTime !== undefined) {
+    docToSave.endTime = eventData.endTime;
+  }
+  if (eventData.lockTime !== undefined) {
+    docToSave.lockTime = eventData.lockTime;
+  }
+  if (eventData.difficultyLevel !== undefined) {
+    docToSave.difficultyLevel = eventData.difficultyLevel;
+  }
+  if (eventData.options !== undefined) {
+    docToSave.options = eventData.options;
+  }
+  if (eventData.rules !== undefined) {
+    docToSave.rules = eventData.rules;
+  }
+  if (eventData.applicableFormats !== undefined) {
+    docToSave.applicableFormats = eventData.applicableFormats;
+  }
 
   return addDoc(eventsCollection, docToSave)
     .catch(async (serverError) => {
@@ -179,10 +211,19 @@ export function updateMatchEvent(
   eventData: Partial<NewCricketEvent>
 ) {
   const eventDocRef = doc(firestore, 'fantasy_matches', matchId, 'events', eventId);
-  const docToUpdate = {
-    ...eventData,
+  
+  // Remove undefined values to avoid Firestore errors
+  const docToUpdate: Record<string, any> = {
     updatedAt: serverTimestamp(),
   };
+
+  // Only include fields that are defined (not undefined)
+  Object.keys(eventData).forEach((key) => {
+    const value = (eventData as any)[key];
+    if (value !== undefined) {
+      docToUpdate[key] = value;
+    }
+  });
 
   return updateDoc(eventDocRef, docToUpdate)
     .catch(async (serverError) => {
