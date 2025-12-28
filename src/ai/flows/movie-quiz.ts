@@ -63,6 +63,11 @@ const generateMovieQuizFlow = ai.defineFlow(
     outputSchema: MovieQuizOutputSchema,
   },
   async input => {
+    // Check if API key is configured
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured. Please set it in your environment variables.');
+    }
+
     const {output} = await generateMovieQuizPrompt(input);
     if (!output?.quiz) {
       throw new Error('Failed to generate quiz content.');

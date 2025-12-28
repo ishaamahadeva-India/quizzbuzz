@@ -68,19 +68,34 @@ const generateDailyNewsQuizFlow = ai.defineFlow(
     outputSchema: DailyNewsQuizOutputSchema,
   },
   async input => {
+    // Check if API key is configured
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured. Please set it in your environment variables.');
+    }
+
     const {output} = await generateQuizPrompt(input);
     if (!output?.quiz) {
       throw new Error('Failed to generate quiz content.');
     }
     
-    // Generate audio for all questions in parallel.
+    // Generate audio for all questions in parallel, but make it optional
+    // If text-to-speech fails, continue without audio
     const narratedQuiz = await Promise.all(
       output.quiz.map(async (q) => {
-        const narration = await textToSpeech({ text: q.question });
-        return {
-            ...q,
-            audioDataUri: narration.audioDataUri,
-        };
+        try {
+          const narration = await textToSpeech({ text: q.question });
+          return {
+              ...q,
+              audioDataUri: narration.audioDataUri,
+          };
+        } catch (error) {
+          console.warn(`Failed to generate audio for question: ${q.question}`, error);
+          // Return question without audio if TTS fails
+          return {
+              ...q,
+              audioDataUri: undefined,
+          };
+        }
       })
     );
 

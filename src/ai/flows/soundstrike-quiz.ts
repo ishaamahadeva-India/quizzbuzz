@@ -74,6 +74,11 @@ const generateSoundstrikeQuizFlow = ai.defineFlow(
     outputSchema: SoundstrikeQuizOutputSchema,
   },
   async input => {
+    // Check if API key is configured
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is not configured. Please set it in your environment variables.');
+    }
+
     const { output } = await generateSoundstrikePrompt(input);
     if (!output?.quotes) {
         throw new Error('Failed to generate quiz content.');
@@ -81,16 +86,28 @@ const generateSoundstrikeQuizFlow = ai.defineFlow(
     
     const quizWithAudio = await Promise.all(
         output.quotes.map(async (item) => {
-            // Generate audio for the quote
-            const narration = await textToSpeech({ text: `"${item.quote}"` });
-
             // Shuffle options
             const options = [item.movie, ...item.distractors].sort(() => Math.random() - 0.5);
             const correctIndex = options.indexOf(item.movie);
             
+            // Generate audio for the quote, but make it optional
+            // If text-to-speech fails, continue without audio
+            let audioDataUri: string | undefined;
+            try {
+                const narration = await textToSpeech({ text: `"${item.quote}"` });
+                audioDataUri = narration.audioDataUri;
+            } catch (error) {
+                console.warn(`Failed to generate audio for quote: ${item.quote}`, error);
+                // Continue without audio - this quiz requires audio, so we'll throw if all fail
+            }
+            
+            if (!audioDataUri) {
+                throw new Error(`Failed to generate audio for quote: ${item.quote}`);
+            }
+            
             return {
                 question: 'Identify the movie from this audio quote:',
-                audioDataUri: narration.audioDataUri,
+                audioDataUri: audioDataUri,
                 options: options,
                 correctAnswerIndex: correctIndex,
                 explanation: item.explanation,
