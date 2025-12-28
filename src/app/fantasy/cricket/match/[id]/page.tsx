@@ -442,7 +442,7 @@ function getPointsForResult(prediction: any, userAnswer: any) {
 
 
 function FirstInningsView({ onInningsEnd, currentStreak, setStreak, onScoreUpdate, players }: { onInningsEnd: () => void, currentStreak: number, setStreak: (streak: number) => void, onScoreUpdate: (points: number) => void, players: (CricketerProfile & {id: string})[] }) {
-    type PredictionStatus = 'predicting' | 'locked' | 'waiting' | 'result';
+    type PredictionStatus = 'predicting' | 'locked';
     const [currentPredIndex, setCurrentPredIndex] = useState(0);
     const [userPredictions, setUserPredictions] = useState<Record<number, any>>({});
     const [status, setStatus] = useState<PredictionStatus>('predicting');
@@ -453,33 +453,13 @@ function FirstInningsView({ onInningsEnd, currentStreak, setStreak, onScoreUpdat
         setStatus('locked');
         setUserPredictions(prev => ({...prev, [currentPredIndex]: predictionData}));
         
-        toast({ title: 'Prediction Locked!' });
+        toast({ 
+            title: 'Prediction Locked!', 
+            description: 'Your prediction has been saved. Results will be shown after the event completes.',
+        });
         
-        // Simulate waiting for outcome
-        setTimeout(() => {
-            setStatus('waiting');
-            setTimeout(() => {
-                setStatus('result');
-
-                const points = getPointsForResult(currentPrediction, predictionData);
-                onScoreUpdate(points);
-                if (points > 0) {
-                    setStreak(currentStreak + 1);
-                } else {
-                    setStreak(0);
-                }
-
-                // Wait to show result before moving on
-                setTimeout(() => {
-                    if (currentPredIndex < livePredictions.length - 1) {
-                        setCurrentPredIndex(prev => prev + 1);
-                        setStatus('predicting');
-                    } else {
-                        onInningsEnd();
-                    }
-                }, 3000);
-            }, 2000);
-        }, 500);
+        // Note: Results will only be shown when the actual event is completed
+        // No simulated results - wait for real match data
     };
 
     const renderPredictionComponent = () => {
@@ -499,7 +479,8 @@ function FirstInningsView({ onInningsEnd, currentStreak, setStreak, onScoreUpdat
         return <p>Loading predictions...</p>
     }
 
-    const points = status === 'result' ? getPointsForResult(currentPrediction, userPredictions[currentPredIndex]) : 0;
+    // Note: Points calculation should only happen when event is completed with actual result
+    // const points = status === 'result' ? getPointsForResult(currentPrediction, userPredictions[currentPredIndex]) : 0;
 
     return (
         <div className="space-y-8">
@@ -521,13 +502,18 @@ function FirstInningsView({ onInningsEnd, currentStreak, setStreak, onScoreUpdat
                             {renderPredictionComponent()}
                              {status !== 'predicting' && (
                                 <div className='mt-4 min-h-[40px]'>
-                                    {status === 'locked' && <p className='font-semibold text-primary animate-pulse'>Prediction Locked! Waiting for event...</p>}
-                                    {status === 'waiting' && <p className='font-semibold text-muted-foreground animate-pulse'>Waiting for outcome...</p>}
-                                    {status === 'result' && (
-                                        <p className={`text-lg font-bold ${points > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                            {points > 0 ? `Correct! +${points} Points` : `Incorrect! ${points} Points`}
-                                        </p>
+                                    {status === 'locked' && (
+                                        <div className="space-y-2">
+                                            <p className='font-semibold text-primary'>Prediction Locked!</p>
+                                            <p className='text-sm text-muted-foreground'>
+                                                Your prediction has been saved. Results will be displayed after the event completes during the match.
+                                            </p>
+                                            <p className='text-xs text-muted-foreground mt-2'>
+                                                Note: This is a demo view. For real match predictions, visit the Events page.
+                                            </p>
+                                        </div>
                                     )}
+                                    {/* Results will only show when event status is 'completed' with actual result data from Firestore */}
                                 </div>
                             )}
                         </CardContent>
@@ -839,15 +825,33 @@ export default function CricketMatchPage() {
             </div>
 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="game">Game</TabsTrigger>
                 <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+                <TabsTrigger value="events">Events</TabsTrigger>
             </TabsList>
             <TabsContent value="game" className="mt-6">
                 {renderGameContent()}
             </TabsContent>
             <TabsContent value="leaderboard" className="mt-6">
                 <LeaderboardView match={match} />
+            </TabsContent>
+            <TabsContent value="events" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Match Events</CardTitle>
+                        <CardDescription>
+                            View and make predictions on real match events. Results will only be shown after events complete.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button asChild className="w-full">
+                            <Link href={`/fantasy/cricket/match/${id}/events`}>
+                                View All Events
+                            </Link>
+                        </Button>
+                    </CardContent>
+                </Card>
             </TabsContent>
         </Tabs>
       
