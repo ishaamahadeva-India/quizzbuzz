@@ -125,26 +125,69 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
   const selectedTournamentId = form.watch('tournamentId');
   const [selectedEventIndices, setSelectedEventIndices] = React.useState<Set<number>>(new Set());
 
+  // Normalize format: Treat IPL as T20 for filtering
+  const normalizedFormat = selectedFormat === 'IPL' ? 'T20' : selectedFormat;
+
   // Filter events by format
   const availableTemplates = CRICKET_EVENT_TEMPLATES.filter((template) => {
+    // Common events (no applicableFormats) apply to all formats
     if (!template.applicableFormats || template.applicableFormats.length === 0) {
-      return true; // Event applies to all formats
+      return true;
     }
-    return template.applicableFormats.includes(selectedFormat as 'T20' | 'ODI' | 'Test');
+    
+    // Check if the selected format (or normalized format) is in the template's applicable formats
+    // Also handle IPL -> T20 mapping
+    const formatsToCheck = normalizedFormat === 'T20' 
+      ? ['T20', 'IPL'] 
+      : [normalizedFormat];
+    
+    return template.applicableFormats.some(format => formatsToCheck.includes(format));
   });
 
-  // Group events by category
-  const groupedEvents = React.useMemo(() => {
+  // Separate events into format-specific and common, preserving original indices
+  const formatSpecificEvents = availableTemplates
+    .map((template, filteredIndex) => {
+      const originalIndex = CRICKET_EVENT_TEMPLATES.findIndex(t => 
+        t.title === template.title && t.eventType === template.eventType
+      );
+      return { template, originalIndex, filteredIndex };
+    })
+    .filter(item => item.template.applicableFormats && item.template.applicableFormats.length > 0);
+  
+  const commonEvents = availableTemplates
+    .map((template, filteredIndex) => {
+      const originalIndex = CRICKET_EVENT_TEMPLATES.findIndex(t => 
+        t.title === template.title && t.eventType === template.eventType
+      );
+      return { template, originalIndex, filteredIndex };
+    })
+    .filter(item => !item.template.applicableFormats || item.template.applicableFormats.length === 0);
+
+  // Group format-specific events by category (using original index)
+  const groupedFormatSpecificEvents = React.useMemo(() => {
     const grouped: Record<string, Array<{ template: typeof CRICKET_EVENT_TEMPLATES[0]; index: number }>> = {};
-    availableTemplates.forEach((template, index) => {
+    formatSpecificEvents.forEach(({ template, originalIndex }) => {
       const category = template.category || 'Uncategorized';
       if (!grouped[category]) {
         grouped[category] = [];
       }
-      grouped[category].push({ template, index });
+      grouped[category].push({ template, index: originalIndex });
     });
     return grouped;
-  }, [availableTemplates]);
+  }, [formatSpecificEvents]);
+
+  // Group common events by category (using original index)
+  const groupedCommonEvents = React.useMemo(() => {
+    const grouped: Record<string, Array<{ template: typeof CRICKET_EVENT_TEMPLATES[0]; index: number }>> = {};
+    commonEvents.forEach(({ template, originalIndex }) => {
+      const category = template.category || 'Uncategorized';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push({ template, index: originalIndex });
+    });
+    return grouped;
+  }, [commonEvents]);
 
   const addEventFromTemplate = (template: typeof CRICKET_EVENT_TEMPLATES[0]) => {
     append({
@@ -169,8 +212,10 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
     setSelectedEventIndices(newSet);
   };
 
-  const toggleCategorySelection = (category: string) => {
-    const categoryEvents = groupedEvents[category] || [];
+  const toggleCategorySelection = (category: string, isCommon: boolean = false) => {
+    const categoryEvents = isCommon 
+      ? (groupedCommonEvents[category] || [])
+      : (groupedFormatSpecificEvents[category] || []);
     const categoryIndices = categoryEvents.map(e => e.index);
     const allSelected = categoryIndices.length > 0 && categoryIndices.every(idx => selectedEventIndices.has(idx));
     
@@ -185,7 +230,11 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
 
   const addSelectedEvents = () => {
     selectedEventIndices.forEach(index => {
-      addEventFromTemplate(availableTemplates[index]);
+      // Use original template index from CRICKET_EVENT_TEMPLATES
+      const template = CRICKET_EVENT_TEMPLATES[index];
+      if (template) {
+        addEventFromTemplate(template);
+      }
     });
     setSelectedEventIndices(new Set());
   };
@@ -496,7 +545,10 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
                   <DialogHeader>
                     <DialogTitle>Add Events from Templates</DialogTitle>
                     <DialogDescription>
-                      Select one or multiple events from {availableTemplates.length} predefined events for {selectedFormat} format.
+                      Select events for <strong>{selectedFormat}</strong> format.
+                      <span className="ml-2 text-muted-foreground">
+                        ({formatSpecificEvents.length} format-specific, {commonEvents.length} common)
+                      </span>
                       {selectedEventIndices.size > 0 && (
                         <span className="ml-2 font-semibold text-primary">
                           {selectedEventIndices.size} selected
@@ -506,20 +558,31 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
                   </DialogHeader>
                   
                   <div className="space-y-6 mt-4">
-                    {Object.entries(groupedEvents).map(([category, events]) => {
+                    {/* Format-Specific Events */}
+                    {Object.keys(groupedFormatSpecificEvents).length > 0 && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 border-b pb-2">
+                          <Badge variant="default" className="text-sm">
+                            {selectedFormat}-Specific Events
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            ({formatSpecificEvents.length} events)
+                          </span>
+                        </div>
+                        {Object.entries(groupedFormatSpecificEvents).map(([category, events]) => {
                       const categoryIndices = events.map(e => e.index);
                       const allSelected = categoryIndices.length > 0 && categoryIndices.every(idx => selectedEventIndices.has(idx));
                       const someSelected = categoryIndices.some(idx => selectedEventIndices.has(idx));
                       
                       return (
-                        <div key={category} className="space-y-3">
+                        <div key={`format-${category}`} className="space-y-3">
                           <div className="flex items-center justify-between border-b pb-2">
                             <h3 className="font-semibold text-lg">{category}</h3>
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => toggleCategorySelection(category)}
+                              onClick={() => toggleCategorySelection(category, false)}
                             >
                               {allSelected ? 'Deselect All' : 'Select All'}
                             </Button>
@@ -543,7 +606,17 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
                                   <div className="text-sm text-muted-foreground mt-1">
                                     {template.description}
                                   </div>
-                                  <div className="flex items-center gap-2 mt-2">
+                                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    {template.applicableFormats && template.applicableFormats.length > 0 && (
+                                      <Badge variant="default" className="text-xs">
+                                        {template.applicableFormats.join(', ')}
+                                      </Badge>
+                                    )}
+                                    {(!template.applicableFormats || template.applicableFormats.length === 0) && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        All Formats
+                                      </Badge>
+                                    )}
                                     <Badge variant="secondary">{template.eventType}</Badge>
                                     <Badge variant="outline">{template.defaultPoints} points</Badge>
                                     {template.difficultyLevel && (
@@ -557,6 +630,83 @@ export function CricketMatchForm({ onSubmit, defaultValues }: CricketMatchFormPr
                         </div>
                       );
                     })}
+                      </div>
+                    )}
+
+                    {/* Common Events (Applicable to All Formats) */}
+                    {Object.keys(groupedCommonEvents).length > 0 && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 border-b pb-2">
+                          <Badge variant="secondary" className="text-sm">
+                            Common Events
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            ({commonEvents.length} events - Available for all formats)
+                          </span>
+                        </div>
+                        {Object.entries(groupedCommonEvents).map(([category, events]) => {
+                      const categoryIndices = events.map(e => e.index);
+                      const allSelected = categoryIndices.length > 0 && categoryIndices.every(idx => selectedEventIndices.has(idx));
+                      const someSelected = categoryIndices.some(idx => selectedEventIndices.has(idx));
+                      
+                      return (
+                        <div key={`common-${category}`} className="space-y-3">
+                          <div className="flex items-center justify-between border-b pb-2">
+                            <h3 className="font-semibold text-lg">{category}</h3>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => toggleCategorySelection(category, true)}
+                            >
+                              {allSelected ? 'Deselect All' : 'Select All'}
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 gap-2">
+                            {events.map(({ template, index }) => (
+                              <div
+                                key={index}
+                                className={cn(
+                                  "flex items-start space-x-3 p-3 rounded-lg border",
+                                  selectedEventIndices.has(index) && "bg-accent"
+                                )}
+                              >
+                                <Checkbox
+                                  checked={selectedEventIndices.has(index)}
+                                  onCheckedChange={() => toggleEventSelection(index)}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold">{template.title}</div>
+                                  <div className="text-sm text-muted-foreground mt-1">
+                                    {template.description}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    {template.applicableFormats && template.applicableFormats.length > 0 && (
+                                      <Badge variant="default" className="text-xs">
+                                        {template.applicableFormats.join(', ')}
+                                      </Badge>
+                                    )}
+                                    {(!template.applicableFormats || template.applicableFormats.length === 0) && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        All Formats
+                                      </Badge>
+                                    )}
+                                    <Badge variant="secondary">{template.eventType}</Badge>
+                                    <Badge variant="outline">{template.defaultPoints} points</Badge>
+                                    {template.difficultyLevel && (
+                                      <Badge variant="outline">{template.difficultyLevel}</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                      </div>
+                    )}
                   </div>
 
                   {selectedEventIndices.size > 0 && (
