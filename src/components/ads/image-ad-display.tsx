@@ -76,10 +76,10 @@ export function ImageAdDisplay({
 
   return (
     <div className={cn(
-      "fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 transition-opacity duration-300",
+      "fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-2 sm:p-4 transition-opacity duration-300",
       isClosing && "opacity-0 pointer-events-none"
     )}>
-      <div className="relative bg-background rounded-lg max-w-2xl w-full overflow-hidden shadow-2xl animate-in fade-in-0 zoom-in-95 duration-300">
+      <div className="relative bg-background rounded-lg max-w-2xl w-full overflow-hidden shadow-2xl animate-in fade-in-0 zoom-in-95 duration-300 max-h-[95vh] flex flex-col">
         {/* Close button (if not required) */}
         {!required && onCancel && (
           <Button
@@ -95,7 +95,9 @@ export function ImageAdDisplay({
         {/* Ad Image */}
         <div 
           className={cn(
-            "relative aspect-video w-full transition-opacity",
+            "relative w-full flex-shrink-0 transition-opacity",
+            "aspect-video sm:aspect-video",
+            "min-h-[200px] sm:min-h-0",
             advertisement.clickThroughUrl && "cursor-pointer hover:opacity-90"
           )}
           onClick={handleImageClick}
@@ -107,6 +109,7 @@ export function ImageAdDisplay({
             className="object-contain bg-muted"
             sizes="(max-width: 768px) 100vw, 800px"
             priority
+            unoptimized={deviceType === 'mobile'} // Optimize for mobile
           />
           {advertisement.clickThroughUrl && (
             <div className="absolute bottom-4 right-4">
@@ -127,21 +130,21 @@ export function ImageAdDisplay({
         </div>
 
         {/* Timer & Continue Button */}
-        <div className="p-4 sm:p-6 bg-muted/50 border-t">
+        <div className="p-3 sm:p-4 md:p-6 bg-muted/50 border-t flex-shrink-0">
           {!canContinue ? (
-            <div className="text-center space-y-3">
-              <p className="text-sm text-muted-foreground">
+            <div className="text-center space-y-2 sm:space-y-3">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Please view this ad to continue
               </p>
               <div className="flex items-center justify-center gap-2">
-                <div className="text-3xl font-bold text-primary animate-pulse">
+                <div className="text-2xl sm:text-3xl font-bold text-primary animate-pulse">
                   {timeRemaining}
                 </div>
-                <span className="text-muted-foreground text-sm">
+                <span className="text-muted-foreground text-xs sm:text-sm">
                   {timeRemaining === 1 ? 'second' : 'seconds'} remaining
                 </span>
               </div>
-              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="w-full bg-muted rounded-full h-1.5 sm:h-2 overflow-hidden">
                 <div 
                   className="bg-primary h-full transition-all duration-1000 ease-linear"
                   style={{ width: `${((duration - timeRemaining) / duration) * 100}%` }}
@@ -149,16 +152,16 @@ export function ImageAdDisplay({
               </div>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
               <div className="text-center sm:text-left">
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Sponsored by{' '}
                   <span className="font-semibold text-foreground">
                     {advertisement.sponsorName}
                   </span>
                 </p>
                 {advertisement.description && (
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-1 hidden sm:block">
                     {advertisement.description}
                   </p>
                 )}
@@ -166,9 +169,9 @@ export function ImageAdDisplay({
               <Button 
                 onClick={handleContinue}
                 size="lg"
-                className="w-full sm:w-auto min-w-[140px]"
+                className="w-full sm:w-auto min-w-[140px] text-sm sm:text-base"
               >
-                Continue to Tournament
+                Continue
               </Button>
             </div>
           )}

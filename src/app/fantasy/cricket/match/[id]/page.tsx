@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ImageAdGate } from '@/components/ads/image-ad-gate';
 
 
 // --- MOCK DATA (to be replaced with Firestore data) ---
@@ -707,6 +708,8 @@ export default function CricketMatchPage() {
   const [activeTab, setActiveTab] = useState('game');
   const [currentScore, setCurrentScore] = useState(110);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [showAdGate, setShowAdGate] = useState(false);
+  const [adViewed, setAdViewed] = useState(false);
 
   // Fetch match from Firestore
   const matchRef = firestore ? doc(firestore, 'fantasy_matches', id) : null;
@@ -792,6 +795,30 @@ export default function CricketMatchPage() {
     // In a real app, this would be a state update for the leaderboard component
   }
 
+  const { user } = useUser();
+
+  // Show ad gate on first visit (mobile only)
+  useEffect(() => {
+    if (!match || adViewed || !user) return;
+    
+    // Check if user has viewed ad for this match
+    const matchAdKey = `ad-viewed-match-${id}-${user.uid}`;
+    const hasViewedMatchAd = localStorage.getItem(matchAdKey);
+    
+    if (!hasViewedMatchAd && typeof window !== 'undefined' && window.innerWidth < 768) {
+      // Show ad on mobile devices
+      setShowAdGate(true);
+    }
+  }, [match, id, adViewed, user]);
+
+  const handleAdComplete = () => {
+    if (!user) return;
+    const matchAdKey = `ad-viewed-match-${id}-${user.uid}`;
+    localStorage.setItem(matchAdKey, 'true');
+    setAdViewed(true);
+    setShowAdGate(false);
+  };
+
   const renderGameContent = () => {
     switch(matchPhase) {
       case 'pre-match':
@@ -814,6 +841,14 @@ export default function CricketMatchPage() {
 
   return (
     <div className="space-y-8">
+      {/* Image Ad Gate for Mobile */}
+      {showAdGate && (
+        <ImageAdGate
+          tournamentId={match.tournamentId || undefined}
+          onComplete={handleAdComplete}
+          required={false}
+        />
+      )}
        <div className="flex flex-col md:flex-row justify-between md:items-start gap-4 md:gap-8">
             <div className="flex-1">
                 <Button variant="ghost" asChild className='mb-2 -ml-2 md:-ml-4'>

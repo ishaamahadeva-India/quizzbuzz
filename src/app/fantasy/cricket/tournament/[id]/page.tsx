@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { AnimatedSponsorTile } from '@/components/fantasy/animated-sponsor-tile';
 
 export default function TournamentPage() {
   const params = useParams();
@@ -383,18 +384,15 @@ export default function TournamentPage() {
                     <p className="text-2xl font-bold text-primary">{tournament.prizePool}</p>
                   </div>
                   {tournament.sponsorName && (
-                    <div className="text-right flex items-center gap-2">
-                      {tournament.sponsorLogo && (
-                        <img 
-                          src={tournament.sponsorLogo} 
-                          alt={tournament.sponsorName}
-                          className="w-10 h-10 rounded object-cover"
-                        />
-                      )}
-                      <div>
-                        <p className="text-xs text-muted-foreground">Sponsored by</p>
-                        <p className="font-semibold">{tournament.sponsorName}</p>
-                      </div>
+                    <div className="text-right">
+                      <AnimatedSponsorTile
+                        sponsorName={tournament.sponsorName}
+                        sponsorLogo={tournament.sponsorLogo}
+                        sponsorWebsite={tournament.sponsorWebsite}
+                        label="Sponsored by"
+                        variant="overall"
+                        className="text-right"
+                      />
                     </div>
                   )}
                 </div>
@@ -403,23 +401,13 @@ export default function TournamentPage() {
 
             {/* Main Tournament Sponsor Display */}
             {tournament.sponsorName && !tournament.prizePool && (
-              <div className="p-4 rounded-lg bg-muted/50 border">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {tournament.sponsorLogo && (
-                      <img 
-                        src={tournament.sponsorLogo} 
-                        alt={tournament.sponsorName}
-                        className="w-12 h-12 rounded object-cover"
-                      />
-                    )}
-                    <div>
-                      <p className="text-xs text-muted-foreground">Tournament Sponsor</p>
-                      <p className="font-semibold">{tournament.sponsorName}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <AnimatedSponsorTile
+                sponsorName={tournament.sponsorName}
+                sponsorLogo={tournament.sponsorLogo}
+                sponsorWebsite={tournament.sponsorWebsite}
+                label="Tournament Sponsor"
+                variant="overall"
+              />
             )}
 
             <div className="flex items-center justify-between pt-4 border-t">
