@@ -135,10 +135,16 @@ export function QuizCompletion({ quiz, userAnswers }: QuizCompletionProps) {
           <Button variant="outline" onClick={handleShare}>
             <Share2 className="w-4 h-4 mr-2" /> Share Result
           </Button>
-          <Button asChild>
-            <Link href="/play">
-              Next Quiz <RefreshCw className="w-4 h-4 ml-2" />
-            </Link>
+          <Button 
+            onClick={() => {
+              toast({
+                title: 'Coming Soon',
+                description: 'More quiz games will be available in Version 2.0. Stay tuned!',
+                duration: 3000,
+              });
+            }}
+          >
+            Next Quiz <RefreshCw className="w-4 h-4 ml-2" />
           </Button>
         </CardFooter>
       </Card>

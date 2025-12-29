@@ -25,11 +25,12 @@ import { usePathname } from 'next/navigation';
 import { useUser, useDoc, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
+import { toast } from '@/hooks/use-toast';
 
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/play', label: 'Play', icon: Play },
+  { href: '/play', label: 'Play', icon: Play, isComingSoon: true },
   { href: '/fantasy', label: 'Fantasy', icon: Trophy },
   { href: '/fantasy/prizes', label: 'Prize Pools', icon: Award },
   { href: '/fan-zone', label: 'Fan Zone', icon: Users },
@@ -50,6 +51,15 @@ export function MainNav() {
   // Only super admin can see admin link
   const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
 
+  const handlePlayClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast({
+      title: 'Coming Soon',
+      description: 'Play features will be available in Version 2.0. Stay tuned!',
+      duration: 3000,
+    });
+  };
+
   return (
     <div className="flex flex-col justify-between h-full p-2">
       <SidebarMenu>
@@ -65,6 +75,21 @@ export function MainNav() {
             else if (item.href !== '/') {
                 isActive = pathname.startsWith(item.href);
            }
+
+          if (item.isComingSoon) {
+            return (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  onClick={handlePlayClick}
+                  isActive={isActive}
+                  tooltip={item.label}
+                >
+                  <item.icon />
+                  <span>{item.label}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          }
 
           return (
             <SidebarMenuItem key={item.href}>
