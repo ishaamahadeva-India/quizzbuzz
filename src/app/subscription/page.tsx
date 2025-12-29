@@ -26,6 +26,8 @@ export default function SubscriptionPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCashfreeLoaded, setIsCashfreeLoaded] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   const userProfileRef = user ? doc(firestore!, 'users', user.uid) : null;
   const { data: userProfile, isLoading: profileLoading } = useDoc(userProfileRef);
@@ -50,6 +52,41 @@ export default function SubscriptionPage() {
       return;
     }
 
+    // Check if Cashfree SDK is loaded
+    if (!isCashfreeLoaded || !window.Cashfree || typeof window.Cashfree.Checkout !== 'function') {
+      if (!isRetrying) {
+        setIsRetrying(true);
+        toast({
+          title: 'Payment Gateway Loading',
+          description: 'Please wait for the payment gateway to load...',
+        });
+        // Wait a bit and check again
+        setTimeout(() => {
+          if (window.Cashfree && typeof window.Cashfree.Checkout === 'function') {
+            setIsCashfreeLoaded(true);
+            setIsRetrying(false);
+            // Retry the subscription
+            handleSubscribe();
+          } else {
+            setIsRetrying(false);
+            toast({
+              title: 'Payment Gateway Error',
+              description: 'Payment gateway not loaded. Please refresh the page.',
+              variant: 'destructive',
+            });
+          }
+        }, 2000);
+      } else {
+        toast({
+          title: 'Payment Gateway Error',
+          description: 'Payment gateway not loaded. Please refresh the page.',
+          variant: 'destructive',
+        });
+        setIsRetrying(false);
+      }
+      return;
+    }
+
     setIsProcessing(true);
     try {
       // Create payment order
@@ -68,58 +105,60 @@ export default function SubscriptionPage() {
 
       const data = await response.json();
 
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || data.details || 'Failed to create payment order');
+      }
+
       if (data.success && data.paymentSessionId) {
+        // Verify Cashfree is still available
+        if (!window.Cashfree || typeof window.Cashfree.Checkout !== 'function') {
+          throw new Error('Payment gateway not available');
+        }
+
         // Load Cashfree checkout
         const checkoutOptions = {
           paymentSessionId: data.paymentSessionId,
-          redirectTarget: '_self',
+          redirectTarget: '_self' as const,
         };
 
-        if (window.Cashfree && window.Cashfree.Checkout) {
-          window.Cashfree.Checkout({
-            ...checkoutOptions,
-            onSuccess: async () => {
-              // Verify payment
-              const verifyResponse = await fetch('/api/subscription/verify-payment', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  orderId: data.orderId,
-                  userId: user.uid,
-                }),
-              });
+        window.Cashfree.Checkout({
+          ...checkoutOptions,
+          onSuccess: async () => {
+            // Verify payment
+            const verifyResponse = await fetch('/api/subscription/verify-payment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                orderId: data.orderId,
+                userId: user.uid,
+              }),
+            });
 
-              const verifyData = await verifyResponse.json();
-              if (verifyData.success) {
-                toast({
-                  title: 'Subscription Activated!',
-                  description: 'Your annual subscription has been activated successfully.',
-                });
-                router.push('/subscription/success');
-              } else {
-                toast({
-                  title: 'Payment Verification Pending',
-                  description: 'Your payment is being processed. Subscription will be activated shortly.',
-                });
-              }
-            },
-            onFailure: () => {
+            const verifyData = await verifyResponse.json();
+            if (verifyData.success) {
               toast({
-                title: 'Payment Failed',
-                description: 'Payment could not be processed. Please try again.',
-                variant: 'destructive',
+                title: 'Subscription Activated!',
+                description: 'Your annual subscription has been activated successfully.',
               });
-            },
-          });
-        } else {
-          toast({
-            title: 'Payment Gateway Error',
-            description: 'Payment gateway not loaded. Please refresh and try again.',
-            variant: 'destructive',
-          });
-        }
+              router.push('/subscription/success');
+            } else {
+              toast({
+                title: 'Payment Verification Pending',
+                description: 'Your payment is being processed. Subscription will be activated shortly.',
+              });
+            }
+          },
+          onFailure: () => {
+            toast({
+              title: 'Payment Failed',
+              description: 'Payment could not be processed. Please try again.',
+              variant: 'destructive',
+            });
+            setIsProcessing(false);
+          },
+        });
       } else {
         throw new Error(data.error || 'Failed to create payment order');
       }
@@ -130,7 +169,6 @@ export default function SubscriptionPage() {
         description: error.message || 'Failed to initiate subscription. Please try again.',
         variant: 'destructive',
       });
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -163,9 +201,25 @@ export default function SubscriptionPage() {
     <>
       <Script
         src="https://sdk.cashfree.com/js/v3/cashfree.js"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
         onLoad={() => {
           console.log('Cashfree SDK loaded');
+          // Verify it's actually available
+          if (window.Cashfree && typeof window.Cashfree.Checkout === 'function') {
+            console.log('Cashfree Checkout is available');
+            setIsCashfreeLoaded(true);
+          } else {
+            console.error('Cashfree SDK loaded but Checkout not available');
+            setIsCashfreeLoaded(false);
+          }
+        }}
+        onError={(e) => {
+          console.error('Failed to load Cashfree SDK:', e);
+          toast({
+            title: 'Payment Gateway Error',
+            description: 'Failed to load payment gateway. Please refresh the page.',
+            variant: 'destructive',
+          });
         }}
       />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -272,7 +326,7 @@ export default function SubscriptionPage() {
             <CardFooter>
               <Button
                 onClick={handleSubscribe}
-                disabled={isProcessing}
+                disabled={isProcessing || !isCashfreeLoaded}
                 className="w-full"
                 size="lg"
               >
@@ -280,6 +334,11 @@ export default function SubscriptionPage() {
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
+                  </>
+                ) : !isCashfreeLoaded ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading Payment Gateway...
                   </>
                 ) : (
                   <>
