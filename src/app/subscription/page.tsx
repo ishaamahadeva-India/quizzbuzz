@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Check, Crown, Loader2, Calendar, CreditCard } from 'lucide-react';
+import { Check, Crown, Loader2, Calendar, CreditCard, Info } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -403,6 +403,19 @@ export default function SubscriptionPage() {
                     <span>Detailed analytics and insights</span>
                   </li>
                 </ul>
+              </div>
+              
+              {/* Important Note */}
+              <div className="border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/20 p-4 rounded-r-lg">
+                <div className="flex items-start gap-3">
+                  <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-amber-900 dark:text-amber-100">Important Note</h4>
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      <strong>This subscription amount is collected ONLY for maintaining and running the platform and for operational purposes.</strong> NO portion of the subscription amounts will be distributed as cash prizes.
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
             <CardFooter>
