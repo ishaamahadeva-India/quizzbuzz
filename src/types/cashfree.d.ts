@@ -1,12 +1,15 @@
 declare global {
   interface Window {
-    Cashfree?: {
-      Checkout: (options: {
+    Cashfree?: (config: { mode: 'sandbox' | 'production' }) => {
+      checkout: (options: {
         paymentSessionId: string;
-        redirectTarget?: string;
-        onSuccess?: () => void;
-        onFailure?: () => void;
-      }) => void;
+        redirectTarget?: '_self' | '_blank' | '_top' | '_modal';
+      }) => Promise<{
+        error?: {
+          message: string;
+        };
+        redirect?: boolean;
+      }>;
     };
   }
 }

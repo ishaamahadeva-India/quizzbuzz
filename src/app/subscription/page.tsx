@@ -52,8 +52,8 @@ export default function SubscriptionPage() {
       return;
     }
 
-    // Check if Cashfree SDK is loaded
-    if (!isCashfreeLoaded || !window.Cashfree || typeof window.Cashfree.Checkout !== 'function') {
+    // Check if Cashfree SDK is loaded and initialize
+    if (!isCashfreeLoaded || !window.Cashfree || typeof window.Cashfree !== 'function') {
       if (!isRetrying) {
         setIsRetrying(true);
         toast({
@@ -62,11 +62,39 @@ export default function SubscriptionPage() {
         });
         // Wait a bit and check again
         setTimeout(() => {
-          if (window.Cashfree && typeof window.Cashfree.Checkout === 'function') {
-            setIsCashfreeLoaded(true);
-            setIsRetrying(false);
-            // Retry the subscription
-            handleSubscribe();
+          if (window.Cashfree && typeof window.Cashfree === 'function') {
+            try {
+              const cashfreeMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' 
+                ? 'production' 
+                : (typeof window !== 'undefined' && 
+                   window.location.hostname !== 'localhost' && 
+                   !window.location.hostname.includes('vercel.app'))
+                  ? 'production'
+                  : 'sandbox';
+              const cashfree = window.Cashfree({
+                mode: cashfreeMode
+              });
+              if (cashfree && typeof cashfree.checkout === 'function') {
+                setIsCashfreeLoaded(true);
+                setIsRetrying(false);
+                // Retry the subscription
+                handleSubscribe();
+              } else {
+                setIsRetrying(false);
+                toast({
+                  title: 'Payment Gateway Error',
+                  description: 'Payment gateway not initialized. Please refresh the page.',
+                  variant: 'destructive',
+                });
+              }
+            } catch (error) {
+              setIsRetrying(false);
+              toast({
+                title: 'Payment Gateway Error',
+                description: 'Failed to initialize payment gateway. Please refresh the page.',
+                variant: 'destructive',
+              });
+            }
           } else {
             setIsRetrying(false);
             toast({
@@ -110,55 +138,87 @@ export default function SubscriptionPage() {
       }
 
       if (data.success && data.paymentSessionId) {
-        // Verify Cashfree is still available
-        if (!window.Cashfree || typeof window.Cashfree.Checkout !== 'function') {
+        // Initialize Cashfree if not already done
+        if (!window.Cashfree || typeof window.Cashfree !== 'function') {
           throw new Error('Payment gateway not available');
         }
 
-        // Load Cashfree checkout
+        // Initialize Cashfree instance
+        const cashfreeMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' 
+          ? 'production' 
+          : (typeof window !== 'undefined' && 
+             window.location.hostname !== 'localhost' && 
+             !window.location.hostname.includes('vercel.app'))
+            ? 'production'
+            : 'sandbox';
+        const cashfree = window.Cashfree({
+          mode: cashfreeMode
+        });
+
+        if (!cashfree || typeof cashfree.checkout !== 'function') {
+          throw new Error('Payment gateway checkout not available');
+        }
+
+        // Initiate Cashfree checkout
         const checkoutOptions = {
           paymentSessionId: data.paymentSessionId,
           redirectTarget: '_self' as const,
         };
 
-        window.Cashfree.Checkout({
-          ...checkoutOptions,
-          onSuccess: async () => {
-            // Verify payment
-            const verifyResponse = await fetch('/api/subscription/verify-payment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                orderId: data.orderId,
-                userId: user.uid,
-              }),
-            });
-
-            const verifyData = await verifyResponse.json();
-            if (verifyData.success) {
+        cashfree.checkout(checkoutOptions)
+          .then(async (result) => {
+            if (result.error) {
+              console.error('Cashfree checkout error:', result.error);
               toast({
-                title: 'Subscription Activated!',
-                description: 'Your annual subscription has been activated successfully.',
+                title: 'Payment Failed',
+                description: result.error.message || 'Payment could not be processed. Please try again.',
+                variant: 'destructive',
               });
-              router.push('/subscription/success');
-            } else {
-              toast({
-                title: 'Payment Verification Pending',
-                description: 'Your payment is being processed. Subscription will be activated shortly.',
-              });
+              setIsProcessing(false);
+              return;
             }
-          },
-          onFailure: () => {
+
+            if (result.redirect) {
+              // Payment is being processed, verify after redirect
+              // The returnUrl will handle the success case
+              console.log('Payment redirect initiated');
+            } else {
+              // Verify payment immediately
+              const verifyResponse = await fetch('/api/subscription/verify-payment', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  orderId: data.orderId,
+                  userId: user.uid,
+                }),
+              });
+
+              const verifyData = await verifyResponse.json();
+              if (verifyData.success) {
+                toast({
+                  title: 'Subscription Activated!',
+                  description: 'Your annual subscription has been activated successfully.',
+                });
+                router.push('/subscription/success');
+              } else {
+                toast({
+                  title: 'Payment Verification Pending',
+                  description: 'Your payment is being processed. Subscription will be activated shortly.',
+                });
+              }
+            }
+          })
+          .catch((error) => {
+            console.error('Cashfree checkout error:', error);
             toast({
               title: 'Payment Failed',
               description: 'Payment could not be processed. Please try again.',
               variant: 'destructive',
             });
             setIsProcessing(false);
-          },
-        });
+          });
       } else {
         throw new Error(data.error || 'Failed to create payment order');
       }
@@ -204,12 +264,34 @@ export default function SubscriptionPage() {
         strategy="afterInteractive"
         onLoad={() => {
           console.log('Cashfree SDK loaded');
-          // Verify it's actually available
-          if (window.Cashfree && typeof window.Cashfree.Checkout === 'function') {
-            console.log('Cashfree Checkout is available');
-            setIsCashfreeLoaded(true);
+          // Verify it's actually available and initialize
+          if (window.Cashfree && typeof window.Cashfree === 'function') {
+            try {
+              // Initialize Cashfree - use NEXT_PUBLIC_CASHFREE_ENV if set, otherwise detect from hostname
+              const cashfreeMode = process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' 
+                ? 'production' 
+                : (typeof window !== 'undefined' && 
+                   window.location.hostname !== 'localhost' && 
+                   !window.location.hostname.includes('vercel.app'))
+                  ? 'production'
+                  : 'sandbox';
+              const cashfree = window.Cashfree({
+                mode: cashfreeMode
+              });
+              
+              if (cashfree && typeof cashfree.checkout === 'function') {
+                console.log('Cashfree Checkout is available');
+                setIsCashfreeLoaded(true);
+              } else {
+                console.error('Cashfree initialized but checkout method not available');
+                setIsCashfreeLoaded(false);
+              }
+            } catch (error) {
+              console.error('Error initializing Cashfree:', error);
+              setIsCashfreeLoaded(false);
+            }
           } else {
-            console.error('Cashfree SDK loaded but Checkout not available');
+            console.error('Cashfree SDK loaded but Cashfree function not available');
             setIsCashfreeLoaded(false);
           }
         }}
