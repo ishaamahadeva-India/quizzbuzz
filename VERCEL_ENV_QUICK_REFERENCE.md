@@ -4,7 +4,7 @@
 
 Go to: **Vercel Dashboard → Your Project → Settings → Environment Variables**
 
-Add these **5 variables**:
+Add these **5 required variables** (and 1 optional):
 
 ### 1. `CASHFREE_APP_ID`
 - **Value**: Your Cashfree App ID
@@ -18,6 +18,12 @@ Add these **5 variables**:
 
 ### 3. `CASHFREE_ENV`
 - **Value**: `sandbox` (for testing) or `production` (for live)
+- **Production**: `production`
+- **Testing**: `sandbox`
+
+### 3b. `NEXT_PUBLIC_CASHFREE_ENV` (Optional)
+- **Value**: `sandbox` (for testing) or `production` (for live)
+- **Note**: If not set, the code will auto-detect from hostname
 - **Production**: `production`
 - **Testing**: `sandbox`
 
