@@ -6,6 +6,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { VisuallyHidden } from "./visually-hidden"
 
 const Dialog = DialogPrimitive.Root
 
@@ -44,6 +45,12 @@ const DialogContent = React.forwardRef<
       )}
       {...props}
     >
+      {/* Always include hidden DialogTitle and DialogDescription for accessibility */}
+      {/* Radix UI requires these for screen readers. If visible ones exist, both will be present which is acceptable */}
+      <VisuallyHidden>
+        <DialogPrimitive.Title>Dialog</DialogPrimitive.Title>
+        <DialogPrimitive.Description>Dialog content</DialogPrimitive.Description>
+      </VisuallyHidden>
       {children}
       {!hideCloseButton && (
         <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
