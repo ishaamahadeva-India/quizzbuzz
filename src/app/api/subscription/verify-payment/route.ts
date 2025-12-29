@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Cashfree } from 'cashfree-pg-sdk-nodejs';
+import { CFConfig, CFPaymentGateway, CFEnvironment } from 'cashfree-pg-sdk-nodejs';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -20,12 +20,6 @@ if (!getApps().length) {
   }
 }
 
-// Initialize Cashfree
-const cashfree = new Cashfree({
-  env: process.env.CASHFREE_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX',
-  apiVersion: '2023-08-01',
-});
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -38,18 +32,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify payment with Cashfree
-    const orderResponse = await cashfree.PGFetchOrder(
+    // Create CFConfig
+    const cfConfig = new CFConfig(
+      process.env.CASHFREE_ENV === 'production' ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
+      '2022-09-01',
       process.env.CASHFREE_APP_ID!,
-      process.env.CASHFREE_SECRET_KEY!,
-      orderId
+      process.env.CASHFREE_SECRET_KEY!
     );
 
-    if (orderResponse.status === 'SUCCESS' && orderResponse.data) {
-      const orderData = orderResponse.data;
-      const paymentStatus = orderData.paymentStatus || 'PENDING';
+    // Verify payment with Cashfree
+    const apiInstance = new CFPaymentGateway();
+    const orderResponse = await apiInstance.getOrder(cfConfig, orderId);
 
-      if (paymentStatus === 'SUCCESS') {
+    if (orderResponse && orderResponse.cfOrder) {
+      const order = orderResponse.cfOrder;
+      // Check order status - 'PAID' indicates successful payment
+      const isPaymentSuccess = order.orderStatus === 'PAID';
+
+      if (isPaymentSuccess) {
         // Update user subscription in Firestore
         const db = getFirestore();
         const userRef = db.collection('users').doc(userId);
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       } else {
         return NextResponse.json({
           success: false,
-          paymentStatus,
+          paymentStatus: order.orderStatus || 'PENDING',
           message: 'Payment not completed',
         });
       }

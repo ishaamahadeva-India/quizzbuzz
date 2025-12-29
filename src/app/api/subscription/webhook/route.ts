@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Cashfree } from 'cashfree-pg-sdk-nodejs';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -19,12 +18,6 @@ if (!getApps().length) {
     console.error('Firebase Admin initialization error:', error);
   }
 }
-
-// Initialize Cashfree
-const cashfree = new Cashfree({
-  env: process.env.CASHFREE_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX',
-  apiVersion: '2023-08-01',
-});
 
 export async function POST(request: NextRequest) {
   try {

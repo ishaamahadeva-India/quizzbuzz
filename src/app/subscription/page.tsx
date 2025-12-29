@@ -33,7 +33,9 @@ export default function SubscriptionPage() {
   const profile = userProfile ? { ...userProfile, id: user?.uid } as UserProfile : null;
   const isSubscribed = profile?.isSubscribed && profile?.subscriptionStatus === 'active';
   const subscriptionEndDate = profile?.subscriptionEndDate
-    ? new Date(profile.subscriptionEndDate.seconds * 1000)
+    ? (profile.subscriptionEndDate instanceof Date
+        ? profile.subscriptionEndDate
+        : new Date((profile.subscriptionEndDate as any)?.seconds * 1000 || profile.subscriptionEndDate))
     : null;
   const isActive = subscriptionEndDate ? new Date() < subscriptionEndDate : false;
 

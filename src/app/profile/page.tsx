@@ -42,6 +42,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { updateUserProfile, isUsernameAvailable } from '@/firebase/firestore/user-profile';
+import { format } from 'date-fns';
 
 const tiers = [
   {
@@ -241,7 +242,9 @@ function ProfileHeader({ user, isLoading, userProfile }: { user: any, isLoading:
               <div className="mt-2 flex items-center gap-2 flex-wrap">
                 {userProfile?.isSubscribed && userProfile?.subscriptionStatus === 'active' && userProfile?.subscriptionEndDate ? (
                   (() => {
-                    const endDate = new Date(userProfile.subscriptionEndDate.seconds * 1000);
+                    const endDate = userProfile.subscriptionEndDate instanceof Date 
+                      ? userProfile.subscriptionEndDate 
+                      : new Date((userProfile.subscriptionEndDate as any)?.seconds * 1000 || userProfile.subscriptionEndDate);
                     const isActive = new Date() < endDate;
                     return isActive ? (
                       <span className="px-3 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary flex items-center gap-1">
@@ -476,7 +479,12 @@ function ProfileHeader({ user, isLoading, userProfile }: { user: any, isLoading:
                         <span className="text-sm text-muted-foreground">Started:</span>
                         <span className="font-semibold flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
-                          {format(new Date(userProfile.subscriptionStartDate.seconds * 1000), 'PPP')}
+                          {format(
+                            userProfile.subscriptionStartDate instanceof Date
+                              ? userProfile.subscriptionStartDate
+                              : new Date((userProfile.subscriptionStartDate as any)?.seconds * 1000 || userProfile.subscriptionStartDate),
+                            'PPP'
+                          )}
                         </span>
                       </div>
                     )}
@@ -484,7 +492,12 @@ function ProfileHeader({ user, isLoading, userProfile }: { user: any, isLoading:
                       <span className="text-sm text-muted-foreground">Expires:</span>
                       <span className="font-semibold flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        {format(new Date(userProfile.subscriptionEndDate.seconds * 1000), 'PPP')}
+                        {format(
+                          userProfile.subscriptionEndDate instanceof Date
+                            ? userProfile.subscriptionEndDate
+                            : new Date((userProfile.subscriptionEndDate as any)?.seconds * 1000 || userProfile.subscriptionEndDate),
+                          'PPP'
+                        )}
                       </span>
                     </div>
                   </div>
