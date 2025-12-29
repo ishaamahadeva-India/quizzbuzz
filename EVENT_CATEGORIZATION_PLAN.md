@@ -41,3 +41,4 @@ Currently ~20 comparison events. Need to add:
 4. Add "Select All in Category" buttons
 5. Add more comparison events for multiple movies
 
+

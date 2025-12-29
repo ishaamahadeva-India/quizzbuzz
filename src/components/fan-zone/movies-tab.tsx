@@ -1,7 +1,6 @@
 
 'use client';
 import { Card, CardContent } from '@/components/ui/card';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
@@ -31,15 +30,14 @@ export function MoviesTab({ searchTerm, industry }: { searchTerm: string, indust
       
   if (isLoading) {
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(6)].map((_, i) => (
-                <Card key={i} className="overflow-hidden">
-                    <CardContent className="p-0">
-                        <Skeleton className="aspect-[2/3] w-full" />
-                         <div className="p-3 space-y-2">
-                            <Skeleton className="h-5 w-3/4" />
-                            <Skeleton className="h-4 w-1/4" />
-                        </div>
+                <Card key={i}>
+                    <CardContent className="p-4 flex flex-col gap-2">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                        <Skeleton className="h-4 w-1/2" />
                     </CardContent>
                 </Card>
             ))}
@@ -56,27 +54,35 @@ export function MoviesTab({ searchTerm, industry }: { searchTerm: string, indust
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {filteredMovies.map((movie) => (
         <Link href={`/fan-zone/movie/${movie.id}`} key={movie.id} className="group">
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="relative aspect-[2/3] w-full">
-                <Image
-                  src={movie.posterUrl || `https://picsum.photos/seed/${movie.id}/400/600`}
-                  alt={movie.title}
-                  fill
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              </div>
-              <div className="p-3">
-                <h3 className="font-bold font-headline text-sm truncate group-hover:text-primary">
-                  {movie.title}
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  {movie.releaseYear}
-                </p>
+          <Card className="h-full hover:border-primary/50 transition-colors">
+            <CardContent className="p-4 flex flex-col gap-2 h-full">
+              <h3 className="font-bold font-headline text-base group-hover:text-primary">
+                {movie.title}
+              </h3>
+              <div className="space-y-1 flex-1">
+                {movie.releaseYear && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Year:</span> {movie.releaseYear}
+                  </p>
+                )}
+                {movie.industry && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Industry:</span> {movie.industry}
+                  </p>
+                )}
+                {movie.genre && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Genre:</span> {movie.genre}
+                  </p>
+                )}
+                {movie.language && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Language:</span> {movie.language}
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

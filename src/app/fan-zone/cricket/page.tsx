@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Sheet,
   SheetContent,
@@ -89,12 +88,13 @@ function CricketersTab({
 
    if (isLoading) {
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(6)].map((_, i) => (
                 <Card key={i}>
-                    <CardContent className="p-4 flex flex-col items-center gap-3">
-                        <Skeleton className="w-24 h-24 rounded-full" />
-                        <Skeleton className="h-5 w-20" />
+                    <CardContent className="p-4 flex flex-col gap-2">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
                     </CardContent>
                 </Card>
             ))}
@@ -111,25 +111,28 @@ function CricketersTab({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {filteredCricketers.map((cricketer) => (
         <Link
           href={`/fan-zone/cricket/cricketer/${cricketer.id}`}
           key={cricketer.id}
           className="group"
         >
-          <Card className="text-center h-full">
-            <CardContent className="p-4 flex flex-col items-center gap-3 justify-between h-full">
-              <Avatar className="w-24 h-24">
-                <AvatarImage
-                  src={cricketer.avatarUrl || `https://picsum.photos/seed/${cricketer.id}/400/400`}
-                  alt={cricketer.name}
-                />
-                <AvatarFallback>{cricketer.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <h3 className="font-bold font-headline text-sm group-hover:text-primary">
+          <Card className="h-full hover:border-primary/50 transition-colors">
+            <CardContent className="p-4 flex flex-col gap-2 h-full">
+              <h3 className="font-bold font-headline text-base group-hover:text-primary">
                 {cricketer.name}
               </h3>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium">Country:</span> {cricketer.country || 'N/A'}
+                </p>
+                {cricketer.roles && cricketer.roles.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Role:</span> {cricketer.roles.join(', ')}
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </Link>
@@ -150,12 +153,12 @@ function TeamsTab({ type, searchTerm }: { type: 'national' | 'ip', searchTerm: s
 
   if (isLoading) {
       return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(6)].map((_, i) => (
                 <Card key={i}>
-                    <CardContent className="p-4 flex flex-col items-center gap-3">
-                        <Skeleton className="w-24 h-24 rounded-full" />
-                        <Skeleton className="h-5 w-20" />
+                    <CardContent className="p-4 flex flex-col gap-2">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-full" />
                     </CardContent>
                 </Card>
             ))}
@@ -172,22 +175,21 @@ function TeamsTab({ type, searchTerm }: { type: 'national' | 'ip', searchTerm: s
   }
   
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {filteredTeams.map((team) => (
         <Link
           href={`/fan-zone/cricket/${type}-team/${team.id}`}
           key={team.id}
           className="group"
         >
-          <Card className="text-center h-full">
-            <CardContent className="p-4 flex flex-col items-center gap-3 justify-between h-full">
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={team.logoUrl || `https://picsum.photos/seed/${team.id}/400/400`} alt={team.name} />
-                <AvatarFallback>{team.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <h3 className="font-bold font-headline text-sm group-hover:text-primary">
+          <Card className="h-full hover:border-primary/50 transition-colors">
+            <CardContent className="p-4 flex flex-col gap-2 h-full">
+              <h3 className="font-bold font-headline text-base group-hover:text-primary">
                 {team.name}
               </h3>
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium">Type:</span> {type === 'ip' ? 'IPL Team' : 'National Team'}
+              </p>
             </CardContent>
           </Card>
         </Link>
@@ -230,20 +232,23 @@ function TrendingTab() {
             <li key={cricketer.id}>
               <Link href={`/fan-zone/cricket/cricketer/${cricketer.id}`} className="group">
                 <div className="flex items-center gap-4">
-                  <span className="text-2xl font-bold font-code text-muted-foreground w-8 text-center">
+                  <span className="text-2xl font-bold font-code text-muted-foreground w-8 text-center shrink-0">
                     {index + 1}
                   </span>
-                  <Avatar className="w-16 h-16">
-                    <AvatarImage src={cricketer.avatarUrl || `https://picsum.photos/seed/${cricketer.id}/400/400`} alt={cricketer.name} />
-                    <AvatarFallback>{cricketer.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-bold font-headline text-lg leading-tight group-hover:text-primary">
                       {cricketer.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {cricketer.country}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-3 mt-1">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">Country:</span> {cricketer.country || 'N/A'}
+                      </p>
+                      {cricketer.roles && cricketer.roles.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-medium">Role:</span> {cricketer.roles.join(', ')}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Link>
@@ -340,24 +345,34 @@ function AnalystViewTab() {
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 border-t pt-6">
                    <div className="flex flex-col items-center text-center gap-2">
-                     <Avatar className="w-20 h-20">
-                        <AvatarImage src={p1Data.avatarUrl || `https://picsum.photos/seed/${p1Data.id}/400/400`} alt={p1Data.name} />
-                        <AvatarFallback>{p1Data.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <h3 className="font-bold font-headline">{p1Data.name}</h3>
-                    <p className="text-sm text-muted-foreground">{p1Data.country}</p>
+                    <h3 className="font-bold font-headline text-lg">{p1Data.name}</h3>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">Country:</span> {p1Data.country || 'N/A'}
+                      </p>
+                      {p1Data.roles && p1Data.roles.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-medium">Role:</span> {p1Data.roles.join(', ')}
+                        </p>
+                      )}
+                    </div>
                    </div>
                    <div className="space-y-4">
                     <StatBar label="Consistency" value1={p1Data.consistencyIndex || 0} value2={p2Data.consistencyIndex || 0} />
                     <StatBar label="Impact Score" value1={p1Data.impactScore || 0} value2={p2Data.impactScore || 0} />
                    </div>
                    <div className="flex flex-col items-center text-center gap-2">
-                     <Avatar className="w-20 h-20">
-                        <AvatarImage src={p2Data.avatarUrl || `https://picsum.photos/seed/${p2Data.id}/400/400`} alt={p2Data.name} />
-                        <AvatarFallback>{p2Data.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <h3 className="font-bold font-headline">{p2Data.name}</h3>
-                    <p className="text-sm text-muted-foreground">{p2Data.country}</p>
+                    <h3 className="font-bold font-headline text-lg">{p2Data.name}</h3>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium">Country:</span> {p2Data.country || 'N/A'}
+                      </p>
+                      {p2Data.roles && p2Data.roles.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-medium">Role:</span> {p2Data.roles.join(', ')}
+                        </p>
+                      )}
+                    </div>
                    </div>
                 </div>
               </motion.div>

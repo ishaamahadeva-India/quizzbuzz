@@ -2,7 +2,6 @@
 'use client';
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Plus, Check } from 'lucide-react';
 import Link from 'next/link';
@@ -47,13 +46,14 @@ export function StarsTab({ searchTerm }: { searchTerm: string }) {
 
   if (isLoading) {
       return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(6)].map((_, i) => (
-                <Card key={i} className="text-center">
-                    <CardContent className="p-4 flex flex-col items-center gap-3">
-                         <Skeleton className="w-24 h-24 rounded-full" />
-                         <Skeleton className="h-5 w-20" />
-                         <Skeleton className="h-8 w-full rounded-full" />
+                <Card key={i}>
+                    <CardContent className="p-4 flex flex-col gap-2">
+                         <Skeleton className="h-6 w-3/4" />
+                         <Skeleton className="h-4 w-full" />
+                         <Skeleton className="h-4 w-2/3" />
+                         <Skeleton className="h-8 w-full rounded-full mt-2" />
                     </CardContent>
                 </Card>
             ))}
@@ -70,19 +70,34 @@ export function StarsTab({ searchTerm }: { searchTerm: string }) {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {filteredStars.map((star) => (
         <Link href={`/fan-zone/star/${star.id}`} key={star.id} className="group">
-          <Card className="text-center h-full">
-            <CardContent className="p-4 flex flex-col items-center gap-3 justify-between h-full">
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={star.avatar || `https://picsum.photos/seed/${star.id}/400/400`} alt={star.name} />
-                <AvatarFallback>{star.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <h3 className="font-bold font-headline text-sm group-hover:text-primary">
+          <Card className="h-full hover:border-primary/50 transition-colors">
+            <CardContent className="p-4 flex flex-col gap-2 h-full">
+              <h3 className="font-bold font-headline text-base group-hover:text-primary">
                 {star.name}
               </h3>
-              <FollowButton starId={star.id} />
+              <div className="space-y-1 flex-1">
+                {star.profession && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Profession:</span> {star.profession}
+                  </p>
+                )}
+                {star.industry && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Industry:</span> {star.industry}
+                  </p>
+                )}
+                {star.genre && star.genre.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Genre:</span> {star.genre.join(', ')}
+                  </p>
+                )}
+              </div>
+              <div className="mt-2">
+                <FollowButton starId={star.id} />
+              </div>
             </CardContent>
           </Card>
         </Link>
