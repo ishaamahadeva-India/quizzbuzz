@@ -30,6 +30,8 @@ import {
   Phone,
   UserCircle,
   AtSign,
+  Crown,
+  Calendar,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -237,9 +239,22 @@ function ProfileHeader({ user, isLoading, userProfile }: { user: any, isLoading:
               </h1>
               <p className="mt-1 text-muted-foreground">{user?.email || 'user@example.com'}</p>
               <div className="mt-2 flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary">
-                  Pro Pass
-                </span>
+                {userProfile?.isSubscribed && userProfile?.subscriptionStatus === 'active' && userProfile?.subscriptionEndDate ? (
+                  (() => {
+                    const endDate = new Date(userProfile.subscriptionEndDate.seconds * 1000);
+                    const isActive = new Date() < endDate;
+                    return isActive ? (
+                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary flex items-center gap-1">
+                        <Crown className="w-3 h-3" />
+                        Premium Member
+                      </span>
+                    ) : null;
+                  })()
+                ) : (
+                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-muted text-muted-foreground">
+                    Free Member
+                  </span>
+                )}
                 {userProfile && (userProfile.city || userProfile.state) && (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="w-3 h-3" />
@@ -416,6 +431,74 @@ function ProfileHeader({ user, isLoading, userProfile }: { user: any, isLoading:
                         <p className="font-semibold">{user?.email || 'Not set'}</p>
                       </div>
                     </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Subscription Status Card */}
+          {userProfile && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Crown className="h-5 w-5" />
+                    Subscription
+                  </CardTitle>
+                  {(!userProfile.isSubscribed || userProfile.subscriptionStatus !== 'active') && (
+                    <Button size="sm" asChild>
+                      <Link href="/subscription">
+                        Subscribe Now
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+                <CardDescription>
+                  Manage your subscription and premium features
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {userProfile.isSubscribed && userProfile.subscriptionStatus === 'active' && userProfile.subscriptionEndDate ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Status:</span>
+                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-600 dark:text-green-400">
+                        Active
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Plan:</span>
+                      <span className="font-semibold">Annual Subscription</span>
+                    </div>
+                    {userProfile.subscriptionStartDate && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Started:</span>
+                        <span className="font-semibold flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          {format(new Date(userProfile.subscriptionStartDate.seconds * 1000), 'PPP')}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Expires:</span>
+                      <span className="font-semibold flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {format(new Date(userProfile.subscriptionEndDate.seconds * 1000), 'PPP')}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground mb-4">
+                      You don't have an active subscription
+                    </p>
+                    <Button asChild>
+                      <Link href="/subscription">
+                        <Crown className="mr-2 h-4 w-4" />
+                        Subscribe Now - ₹99/year
+                      </Link>
+                    </Button>
                   </div>
                 )}
               </CardContent>

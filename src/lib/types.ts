@@ -76,6 +76,13 @@ export type UserProfile = {
     banReason?: string;
     banExpiresAt?: Date;
     suspiciousActivity?: boolean;
+    // Subscription fields
+    isSubscribed?: boolean;
+    subscriptionStartDate?: Date;
+    subscriptionEndDate?: Date;
+    subscriptionPlan?: 'annual';
+    paymentId?: string; // Cashfree payment order ID
+    subscriptionStatus?: 'active' | 'expired' | 'cancelled';
 };
 
 export type UserPrediction = {

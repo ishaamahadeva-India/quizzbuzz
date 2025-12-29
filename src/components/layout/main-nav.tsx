@@ -19,6 +19,7 @@ import {
   Users,
   Zap,
   Award,
+  Crown,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -36,6 +37,7 @@ const navItems = [
   { href: '/insights', label: 'Insights', icon: BarChart2 },
   { href: '/redeem', label: 'Rewards', icon: Gift },
   { href: '/profile', label: 'Profile', icon: User },
+  { href: '/subscription', label: 'Subscription', icon: Crown },
   { href: '/play', label: 'Play', icon: Play, isComingSoon: true },
 ];
 
