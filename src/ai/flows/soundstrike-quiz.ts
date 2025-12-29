@@ -2,6 +2,10 @@
 
 /**
  * @fileOverview Generates a "Soundstrike" quiz with audio movie quotes.
+ * 
+ * ⚠️ DISABLED FOR VERSION 1.0 - Will be re-enabled in Version 2.0
+ * This flow is currently disabled as the Play section is hidden.
+ * Keep this file for future use when Version 2.0 launches.
  *
  * - generateSoundstrikeQuiz - A function that generates the quiz.
  * - SoundstrikeQuizInput - The input type for the generateSoundstrikeQuiz function.

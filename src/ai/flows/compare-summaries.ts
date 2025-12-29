@@ -2,6 +2,10 @@
 
 /**
  * @fileOverview A flow for comparing a user's summary against an AI-generated summary.
+ * 
+ * ⚠️ DISABLED FOR VERSION 1.0 - Will be re-enabled in Version 2.0
+ * This flow is currently disabled as the Play section (Intel Briefing) is hidden.
+ * Keep this file for future use when Version 2.0 launches.
  *
  * - compareSummaries - A function that compares two summaries based on an original article.
  * - CompareSummariesInput - The input type for the compareSummaries function.

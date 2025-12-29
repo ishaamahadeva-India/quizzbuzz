@@ -3,6 +3,10 @@
 
 /**
  * @fileOverview Generates a daily news quiz using Genkit.
+ * 
+ * ⚠️ DISABLED FOR VERSION 1.0 - Will be re-enabled in Version 2.0
+ * This flow is currently disabled as the Play section is hidden.
+ * Keep this file for future use when Version 2.0 launches.
  *
  * - generateDailyNewsQuiz - A function that generates the daily news quiz.
  * - DailyNewsQuizInput - The input type for the generateDailyNewsQuiz function.

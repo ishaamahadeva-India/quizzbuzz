@@ -3,6 +3,10 @@
 
 /**
  * @fileOverview Generates a "Frame Lock" quiz question.
+ * 
+ * ⚠️ DISABLED FOR VERSION 1.0 - Will be re-enabled in Version 2.0
+ * This flow is currently disabled as the Play section is hidden.
+ * Keep this file for future use when Version 2.0 launches.
  *
  * - generateFrameLockQuiz - A function that generates the image-based quiz.
  * - FrameLockQuizOutput - The return type for the generateFrameLockQuiz function.

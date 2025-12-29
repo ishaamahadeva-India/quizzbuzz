@@ -1,63 +1,36 @@
-import { generateDailyNewsQuiz } from '@/ai/flows/daily-news-quiz';
-import { QuizClient } from '@/components/quiz/quiz-client';
+'use client';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { AlertTriangle } from 'lucide-react';
+import { Clock, Sparkles } from 'lucide-react';
 
-export default async function DailyNewsQuizPage() {
-  let quizData;
-  let quizError = false;
-  let errorMessage = 'We couldn\'t generate the daily quiz at this moment. Please try again later.';
-  
-  try {
-    quizData = await generateDailyNewsQuiz({ numQuestions: 3 });
-  } catch (error) {
-    console.error('Failed to generate daily news quiz:', error);
-    quizError = true;
-    
-    // Provide more specific error messages
-    if (error instanceof Error) {
-      if (error.message.includes('GEMINI_API_KEY')) {
-        errorMessage = 'API key is not configured. Please contact the administrator.';
-      } else if (error.message.includes('Failed to generate quiz content')) {
-        errorMessage = 'The AI model failed to generate quiz content. Please try again.';
-      } else {
-        errorMessage = error.message || errorMessage;
-      }
-    }
-  }
-
-  if (quizError || !quizData || !quizData.quiz || quizData.quiz.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] p-4">
-        <Card className="max-w-md text-center">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2">
-              <AlertTriangle className="text-destructive" />
-              Error Generating Quiz
+export default function DailyNewsQuizPage() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh] p-4">
+      <Card className="max-w-md text-center border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+        <CardContent className="p-12 flex flex-col items-center justify-center gap-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Sparkles className="w-24 h-24 text-primary/20 animate-pulse" />
+            </div>
+            <Clock className="w-16 h-16 text-primary relative z-10" />
+          </div>
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-headline">
+              Coming Soon
             </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              {errorMessage}
+              Daily News Quiz will be available in Version 2.0. Stay tuned!
             </p>
-            {process.env.NODE_ENV === 'development' && (
-              <details className="text-left text-xs text-muted-foreground">
-                <summary className="cursor-pointer">Technical Details</summary>
-                <pre className="mt-2 p-2 bg-muted rounded overflow-auto">
-                  {quizError ? 'Error occurred during quiz generation' : 'No quiz data returned'}
-                </pre>
-              </details>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return <QuizClient quiz={quizData.quiz} />;
+            <p className="text-sm text-muted-foreground mt-4">
+              In the meantime, try our <span className="font-semibold text-foreground">Movie Quiz</span> in the Fan Zone!
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
