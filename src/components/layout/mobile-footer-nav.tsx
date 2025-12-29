@@ -16,8 +16,8 @@ const mobileNavItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/fantasy', label: 'Fantasy', icon: Trophy },
   { href: '/fan-zone', label: 'Fan Zone', icon: Users },
-  { href: '/play', label: 'Play', icon: Play, isComingSoon: true },
   { href: '/profile', label: 'Profile', icon: User },
+  { href: '/play', label: 'Play', icon: Play, isComingSoon: true },
 ];
 
 export function MobileFooterNav() {

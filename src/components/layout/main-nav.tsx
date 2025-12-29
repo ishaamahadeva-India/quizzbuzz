@@ -30,13 +30,13 @@ import { toast } from '@/hooks/use-toast';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/play', label: 'Play', icon: Play, isComingSoon: true },
   { href: '/fantasy', label: 'Fantasy', icon: Trophy },
   { href: '/fantasy/prizes', label: 'Prize Pools', icon: Award },
   { href: '/fan-zone', label: 'Fan Zone', icon: Users },
   { href: '/insights', label: 'Insights', icon: BarChart2 },
   { href: '/redeem', label: 'Rewards', icon: Gift },
   { href: '/profile', label: 'Profile', icon: User },
+  { href: '/play', label: 'Play', icon: Play, isComingSoon: true },
 ];
 
 const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || 'admin@fantasy.com';
