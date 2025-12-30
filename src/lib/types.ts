@@ -711,10 +711,37 @@ export type VoucherRedemption = {
   notes?: string; // Admin notes
 };
 
-export type DailyRewardConfig = {
-  dailyLoginPoints: number; // Points for daily login (default: 99)
-  dailyGamePoints: number; // Points for playing at least 1 game (default: varies)
-  dailyGameRequirement: 'any_game' | 'fantasy_cricket' | 'fantasy_movie' | 'quiz'; // What counts as a game
+export type RewardMilestoneConfig = {
+  id: string;
+  name: string; // e.g., "30-Day Login Streak", "30 Games in 30 Days"
+  description?: string;
+  type: 'login_streak' | 'games_played' | 'points_earned' | 'custom';
+  requirement: {
+    days?: number; // For login streak (e.g., 30)
+    games?: number; // For games played (e.g., 30)
+    daysWindow?: number; // Time window for games (e.g., 30 days)
+    points?: number; // For points earned milestone
+  };
+  reward: {
+    voucherId?: string; // Voucher to award
+    voucherName?: string; // Voucher name (if voucher doesn't exist yet)
+    points?: number; // Points to award instead of voucher
+  };
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type NewRewardMilestoneConfig = Omit<RewardMilestoneConfig, 'id' | 'createdAt' | 'updatedAt'>;
+
+export type UserMilestoneProgress = {
+  milestoneId: string;
+  milestoneName: string;
+  currentProgress: number; // Current count (days/games/points)
+  requiredProgress: number; // Required count
+  achieved: boolean;
+  achievedAt?: Date;
+  lastUpdated: Date;
 };
 
 // Image Advertisement Types

@@ -145,7 +145,70 @@ export async function getAllVouchers(firestore: Firestore): Promise<(Voucher & {
 }
 
 /**
- * Redeems a voucher for a user
+ * Awards a voucher to a user without deducting points (for milestone rewards)
+ */
+export async function awardVoucher(
+  firestore: Firestore,
+  userId: string,
+  voucherId: string,
+  reason: string = 'Milestone reward'
+): Promise<string> {
+  // Get voucher details
+  const voucherDocRef = doc(firestore, 'vouchers', voucherId);
+  const voucherDoc = await getDoc(voucherDocRef);
+  
+  if (!voucherDoc.exists()) {
+    throw new Error('Voucher not found');
+  }
+
+  const voucher = { id: voucherDoc.id, ...voucherDoc.data() } as Voucher & { id: string };
+
+  if (!voucher.active) {
+    throw new Error('Voucher is not active');
+  }
+
+  // Check stock
+  if (voucher.stock !== undefined && (voucher.redeemedCount || 0) >= voucher.stock) {
+    throw new Error('Voucher is out of stock');
+  }
+
+  // Create redemption record (no point deduction)
+  const redemptionsCollection = collection(firestore, 'voucher-redemptions');
+  const redemptionData: NewVoucherRedemption = {
+    userId,
+    voucherId: voucher.id,
+    voucherName: voucher.name,
+    pointsSpent: 0, // No points spent for milestone rewards
+    voucherValue: voucher.value,
+    status: 'pending',
+  };
+
+  try {
+    const redemptionRef = await addDoc(redemptionsCollection, {
+      ...redemptionData,
+      redeemedAt: serverTimestamp(),
+    });
+
+    // Update voucher redeemed count
+    await updateDoc(voucherDocRef, {
+      redeemedCount: increment(1),
+      updatedAt: serverTimestamp(),
+    });
+
+    return redemptionRef.id;
+  } catch (serverError: any) {
+    const permissionError = new FirestorePermissionError({
+      path: redemptionsCollection.path,
+      operation: 'create',
+      requestResourceData: redemptionData,
+    });
+    errorEmitter.emit('permission-error', permissionError);
+    throw serverError;
+  }
+}
+
+/**
+ * Redeems a voucher for a user (with point deduction)
  */
 export async function redeemVoucher(
   firestore: Firestore,

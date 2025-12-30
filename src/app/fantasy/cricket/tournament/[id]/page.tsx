@@ -191,10 +191,17 @@ export default function TournamentPage() {
 
       await addTournamentEntry(firestore, entryData);
 
-      // Record game play for daily rewards
+      // Record game play for milestone rewards
       if (user?.uid) {
-        const { recordGamePlay } = await import('@/firebase/firestore/daily-rewards');
-        recordGamePlay(firestore, user.uid, 'fantasy_cricket').catch(err => {
+        const { recordGamePlay } = await import('@/firebase/firestore/reward-milestones');
+        recordGamePlay(firestore, user.uid, 'fantasy_cricket').then(result => {
+          if (result.milestonesAchieved.length > 0) {
+            toast({
+              title: 'Milestone Achieved!',
+              description: `Congratulations! You've achieved: ${result.milestonesAchieved.join(', ')}`,
+            });
+          }
+        }).catch(err => {
           console.error('Failed to record game play:', err);
         });
       }

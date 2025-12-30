@@ -27,9 +27,11 @@ import {
   getUserRedemptions 
 } from '@/firebase/firestore/vouchers';
 import { 
-  checkAndAwardDailyLogin, 
-  checkAndAwardDailyGame 
-} from '@/firebase/firestore/daily-rewards';
+  recordDailyLogin,
+  getUserMilestoneProgress
+} from '@/firebase/firestore/reward-milestones';
+import { getActiveRewardMilestones } from '@/firebase/firestore/reward-milestone-config';
+import type { RewardMilestoneConfig, UserMilestoneProgress } from '@/lib/types';
 import { useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Voucher, VoucherRedemption, UserProfile } from '@/lib/types';
@@ -42,10 +44,9 @@ export default function RewardsPage() {
   const [redemptions, setRedemptions] = useState<(VoucherRedemption & { id: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
-  const [dailyLoginChecked, setDailyLoginChecked] = useState(false);
-  const [dailyGameChecked, setDailyGameChecked] = useState(false);
-  const [dailyLoginReward, setDailyLoginReward] = useState<{ awarded: boolean; streak: number; message: string } | null>(null);
-  const [dailyGameReward, setDailyGameReward] = useState<{ awarded: boolean; message: string } | null>(null);
+  const [milestones, setMilestones] = useState<(RewardMilestoneConfig & { id: string })[]>([]);
+  const [userProgress, setUserProgress] = useState<UserMilestoneProgress[]>([]);
+  const [loginChecked, setLoginChecked] = useState(false);
 
   // Get user profile
   const userProfileRef = firestore && user ? doc(firestore, 'users', user.uid) : null;
@@ -57,12 +58,16 @@ export default function RewardsPage() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [vouchersData, redemptionsData] = await Promise.all([
+        const [vouchersData, redemptionsData, milestonesData, progressData] = await Promise.all([
           getActiveVouchers(firestore),
           getUserRedemptions(firestore, user.uid),
+          getActiveRewardMilestones(firestore),
+          getUserMilestoneProgress(firestore, user.uid),
         ]);
         setVouchers(vouchersData);
         setRedemptions(redemptionsData);
+        setMilestones(milestonesData);
+        setUserProgress(progressData);
       } catch (error: any) {
         console.error('Error loading rewards data:', error);
         toast({
@@ -78,53 +83,31 @@ export default function RewardsPage() {
     loadData();
   }, [firestore, user]);
 
-  // Check daily login reward on mount
+  // Record daily login and check milestones on mount
   useEffect(() => {
-    if (!firestore || !user || dailyLoginChecked) return;
+    if (!firestore || !user || loginChecked) return;
 
-    const checkDailyLogin = async () => {
+    const recordLogin = async () => {
       try {
-        const result = await checkAndAwardDailyLogin(firestore, user.uid, 99);
-        setDailyLoginReward(result);
-        if (result.awarded) {
+        const result = await recordDailyLogin(firestore, user.uid);
+        if (result.milestonesAchieved.length > 0) {
           toast({
-            title: 'Daily Login Reward!',
-            description: result.message,
+            title: 'Milestone Achieved! 🎉',
+            description: `Congratulations! You've achieved: ${result.milestonesAchieved.join(', ')}`,
           });
+          // Reload progress
+          const progressData = await getUserMilestoneProgress(firestore, user.uid);
+          setUserProgress(progressData);
         }
       } catch (error: any) {
-        console.error('Error checking daily login:', error);
+        console.error('Error recording daily login:', error);
       } finally {
-        setDailyLoginChecked(true);
+        setLoginChecked(true);
       }
     };
 
-    checkDailyLogin();
-  }, [firestore, user, dailyLoginChecked]);
-
-  // Check daily game reward on mount
-  useEffect(() => {
-    if (!firestore || !user || dailyGameChecked) return;
-
-    const checkDailyGame = async () => {
-      try {
-        const result = await checkAndAwardDailyGame(firestore, user.uid, 99);
-        setDailyGameReward(result);
-        if (result.awarded) {
-          toast({
-            title: 'Daily Game Reward!',
-            description: result.message,
-          });
-        }
-      } catch (error: any) {
-        console.error('Error checking daily game:', error);
-      } finally {
-        setDailyGameChecked(true);
-      }
-    };
-
-    checkDailyGame();
-  }, [firestore, user, dailyGameChecked]);
+    recordLogin();
+  }, [firestore, user, loginChecked]);
 
   const handleRedeemVoucher = async (voucherId: string) => {
     if (!firestore || !user) {
@@ -191,8 +174,6 @@ export default function RewardsPage() {
 
   const userPoints = (userProfile as UserProfile)?.points || 0;
   const loginStreak = (userProfile as UserProfile)?.dailyLoginStreak || 0;
-  const lastLoginDate = (userProfile as UserProfile)?.lastDailyLoginDate;
-  const lastGameDate = (userProfile as UserProfile)?.lastDailyGameDate;
 
   const today = new Date().toISOString().split('T')[0];
   const canClaimLogin = lastLoginDate !== today;
@@ -223,76 +204,21 @@ export default function RewardsPage() {
         </CardContent>
       </Card>
 
-      {/* Daily Rewards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Calendar className="w-5 h-5" />
-              Daily Login Reward
-            </CardTitle>
-            <CardDescription>
-              Login daily to earn {99} points
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-20 w-full" />
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Current Streak:</span>
-                  <Badge variant="outline">{loginStreak} days</Badge>
-                </div>
-                {canClaimLogin ? (
-                  <Alert>
-                    <AlertDescription>
-                      Login reward available! Refresh the page to claim.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    <span>Claimed today</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Gamepad2 className="w-5 h-5" />
-              Daily Game Reward
-            </CardTitle>
-            <CardDescription>
-              Play at least 1 game daily to earn {99} points
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-20 w-full" />
-            ) : (
-              <div className="space-y-2">
-                {canClaimGame ? (
-                  <Alert>
-                    <AlertDescription>
-                      Play a game to claim your daily reward!
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    <span>Claimed today</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Current Login Streak Display */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Current Login Streak
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold">{loginStreak} days</span>
+            <Badge variant="outline" className="text-lg">Keep it up!</Badge>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="vouchers" className="w-full">
