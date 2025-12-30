@@ -53,16 +53,15 @@ export function DisclaimerModal({ onClose }: DisclaimerModalProps = {}) {
         description: 'Your settings have been saved.',
       });
 
-      // Call the onClose callback if provided
+      // Call the onClose callback if provided (preferred method)
       if (onClose) {
-        onClose();
-      } else {
-        // Fallback: refresh the page to re-fetch user profile
-        router.refresh();
-        // Also force a reload after a short delay to ensure Firestore updates are reflected
+        // Wait a moment for Firestore to sync, then close
         setTimeout(() => {
-          window.location.reload();
-        }, 500);
+          onClose();
+        }, 300);
+      } else {
+        // Fallback: reload the page to ensure Firestore updates are reflected
+        window.location.reload();
       }
     } catch (error) {
       toast({
