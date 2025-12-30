@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUser, useFirestore } from '@/firebase';
 import { selectAdForEntry, selectAdForCampaign, selectMultipleAdsForEntry, selectMultipleAdsForCampaign, incrementAdViews } from '@/firebase/firestore/image-advertisements';
-import { createImageAdView, completeImageAdView, hasUserViewedAd, hasUserViewedAdForCampaign, getUserAdViews } from '@/firebase/firestore/image-ad-views';
+import { createImageAdView, hasUserViewedAd, hasUserViewedAdForCampaign, getUserAdViews } from '@/firebase/firestore/image-ad-views';
 import { ImageAdDisplay } from './image-ad-display';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ImageAdvertisement } from '@/lib/types';
@@ -320,17 +320,9 @@ export function ImageAdGate({
       const newViewIds = [...viewIds, viewIdStr];
       setViewIds(newViewIds);
 
-      // Mark as completed (with a small delay to ensure document is written)
-      // Note: createImageAdView already sets wasCompleted based on viewData,
-      // but we update it here to ensure consistency and set updatedAt timestamp
-      try {
-        // Small delay to ensure the document write is complete before updating
-        await new Promise(resolve => setTimeout(resolve, 100));
-        await completeImageAdView(firestore, viewIdStr);
-      } catch (updateError) {
-        // If update fails, log but don't block - the view was already created
-        console.warn('Failed to update ad view completion status:', updateError);
-      }
+      // Note: Since viewData.wasCompleted is already true, the document is created as completed
+      // We skip the update call to avoid permission issues and race conditions
+      // The document already has wasCompleted: true and updatedAt timestamp from creation
 
       // Increment ad view count
       await incrementAdViews(firestore, currentAd.id);
