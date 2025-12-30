@@ -320,8 +320,17 @@ export function ImageAdGate({
       const newViewIds = [...viewIds, viewIdStr];
       setViewIds(newViewIds);
 
-      // Mark as completed
-      await completeImageAdView(firestore, viewIdStr);
+      // Mark as completed (with a small delay to ensure document is written)
+      // Note: createImageAdView already sets wasCompleted based on viewData,
+      // but we update it here to ensure consistency and set updatedAt timestamp
+      try {
+        // Small delay to ensure the document write is complete before updating
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await completeImageAdView(firestore, viewIdStr);
+      } catch (updateError) {
+        // If update fails, log but don't block - the view was already created
+        console.warn('Failed to update ad view completion status:', updateError);
+      }
 
       // Increment ad view count
       await incrementAdViews(firestore, currentAd.id);

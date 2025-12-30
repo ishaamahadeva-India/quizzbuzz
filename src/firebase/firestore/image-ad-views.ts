@@ -82,10 +82,21 @@ export function completeImageAdView(
   viewId: string
 ) {
   const viewDocRef = doc(firestore, 'image-ad-views', viewId);
-  return updateDoc(viewDocRef, {
+  const updateData = {
     wasCompleted: true,
     updatedAt: serverTimestamp(),
-  });
+  };
+
+  return updateDoc(viewDocRef, updateData)
+    .catch(async (serverError) => {
+      const permissionError = new FirestorePermissionError({
+        path: viewDocRef.path,
+        operation: 'update',
+        requestResourceData: updateData,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      throw serverError;
+    });
 }
 
 /**
