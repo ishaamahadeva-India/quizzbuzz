@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { notFound, useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -710,6 +710,12 @@ export default function CricketMatchPage() {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [showAdGate, setShowAdGate] = useState(false);
   const [adViewed, setAdViewed] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  
+  // Ensure we're on client-side to prevent hydration mismatches
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Fetch match from Firestore
   const matchRef = firestore ? doc(firestore, 'fantasy_matches', id) : null;
@@ -720,7 +726,7 @@ export default function CricketMatchPage() {
   const { data: allPlayers, isLoading: playersLoading } = useCollection(playersQuery);
 
   // Show loading state
-  if (matchLoading || playersLoading) {
+  if (matchLoading || playersLoading || !isClient) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Skeleton className="h-full w-full" />
@@ -735,7 +741,11 @@ export default function CricketMatchPage() {
 
   // Filter players by match teams (team1 and team2)
   // If no players match, show all players as fallback
-  let filteredPlayers = allPlayers?.filter((player: any) => {
+  // Use useMemo to prevent hydration mismatches
+  const filteredPlayers = useMemo(() => {
+    if (!allPlayers || !match) return [];
+    
+    return allPlayers.filter((player: any) => {
     if (!player.country) return false;
     // Match team names with player countries (case-insensitive)
     const team1Lower = match.team1?.toLowerCase() || '';
@@ -773,21 +783,25 @@ export default function CricketMatchPage() {
       }
     }
     
-    return false;
-  }) || [];
+      return false;
+    });
+  }, [allPlayers, match?.team1, match?.team2]);
 
   // If no players match the teams, show all players as fallback
-  if (filteredPlayers.length === 0 && allPlayers && allPlayers.length > 0) {
-    filteredPlayers = allPlayers;
-  }
+  const finalFilteredPlayers = filteredPlayers.length === 0 && allPlayers && allPlayers.length > 0 
+    ? allPlayers 
+    : filteredPlayers;
 
   // Add id to each player if not present
-  const playersWithId = filteredPlayers.map((player: any, index: number) => ({
+  // Use useMemo to prevent hydration mismatches
+  const playersWithId = useMemo(() => {
+    return finalFilteredPlayers.map((player: any, index: number) => ({
     ...player,
-    id: player.id || `player-${index}`,
-    name: player.name || `Player ${index + 1}`,
-    avatarUrl: player.avatarUrl || player.avatar || `https://picsum.photos/seed/${player.id || index}/400/400`,
-  }));
+      id: player.id || `player-${index}`,
+      name: player.name || `Player ${index + 1}`,
+      avatarUrl: player.avatarUrl || player.avatar || `https://picsum.photos/seed/${player.id || index}/400/400`,
+    }));
+  }, [finalFilteredPlayers]);
 
   const handleScoreUpdate = (points: number) => {
     setCurrentScore(prev => prev + points);
@@ -797,9 +811,9 @@ export default function CricketMatchPage() {
 
   const { user } = useUser();
 
-  // Show ad gate on first visit (mobile only)
+  // Show ad gate on first visit (client-side only to prevent hydration mismatch)
   useEffect(() => {
-    if (!match || adViewed || !user) return;
+    if (!isClient || !match || adViewed || !user) return;
     
     // Check if user has viewed ad for this match
     const matchAdKey = `ad-viewed-match-${id}-${user.uid}`;
@@ -809,7 +823,7 @@ export default function CricketMatchPage() {
       // Show ad on all devices (not just mobile)
       setShowAdGate(true);
     }
-  }, [match, id, adViewed, user]);
+  }, [isClient, match, id, adViewed, user]);
 
   const handleAdComplete = () => {
     if (!user) return;
