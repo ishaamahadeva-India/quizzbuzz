@@ -704,6 +704,9 @@ export default function CricketMatchPage() {
   const params = useParams();
   const id = params.id as string;
   const firestore = useFirestore();
+  const { user } = useUser();
+  
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [matchPhase, setMatchPhase] = useState<MatchPhase>('pre-match');
   const [activeTab, setActiveTab] = useState('game');
   const [currentScore, setCurrentScore] = useState(110);
@@ -724,20 +727,6 @@ export default function CricketMatchPage() {
 
   const playersQuery = firestore ? collection(firestore, 'cricketers') : null;
   const { data: allPlayers, isLoading: playersLoading } = useCollection(playersQuery);
-
-  // Show loading state
-  if (matchLoading || playersLoading || !isClient) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Skeleton className="h-full w-full" />
-      </div>
-    );
-  }
-
-  // Show 404 if match doesn't exist
-  if (!match) {
-    return notFound();
-  }
 
   // Filter players by match teams (team1 and team2)
   // If no players match, show all players as fallback
@@ -803,14 +792,6 @@ export default function CricketMatchPage() {
     }));
   }, [finalFilteredPlayers]);
 
-  const handleScoreUpdate = (points: number) => {
-    setCurrentScore(prev => prev + points);
-    const updatedLeaderboard = leaderboardData.map(p => p.name === 'You' ? {...p, score: currentScore + points} : p).sort((a,b) => b.score - a.score);
-    // In a real app, this would be a state update for the leaderboard component
-  }
-
-  const { user } = useUser();
-
   // Show ad gate on first visit (client-side only to prevent hydration mismatch)
   useEffect(() => {
     if (!isClient || !match || adViewed || !user) return;
@@ -824,6 +805,27 @@ export default function CricketMatchPage() {
       setShowAdGate(true);
     }
   }, [isClient, match, id, adViewed, user]);
+
+  // NOW SAFE TO HAVE CONDITIONAL RETURNS (all hooks called above)
+  // Show loading state
+  if (matchLoading || playersLoading || !isClient) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Skeleton className="h-full w-full" />
+      </div>
+    );
+  }
+
+  // Show 404 if match doesn't exist
+  if (!match) {
+    return notFound();
+  }
+
+  const handleScoreUpdate = (points: number) => {
+    setCurrentScore(prev => prev + points);
+    const updatedLeaderboard = leaderboardData.map(p => p.name === 'You' ? {...p, score: currentScore + points} : p).sort((a,b) => b.score - a.score);
+    // In a real app, this would be a state update for the leaderboard component
+  }
 
   const handleAdComplete = () => {
     if (!user) return;
