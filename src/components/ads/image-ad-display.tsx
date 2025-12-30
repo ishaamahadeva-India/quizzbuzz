@@ -13,6 +13,8 @@ type ImageAdDisplayProps = {
   onCancel?: () => void;
   required?: boolean;
   displayDuration?: number; // Override default duration
+  adNumber?: number; // Current ad number (1, 2, 3)
+  totalAds?: number; // Total number of ads in sequence
 };
 
 export function ImageAdDisplay({ 
@@ -20,7 +22,9 @@ export function ImageAdDisplay({
   onComplete, 
   onCancel,
   required = true,
-  displayDuration
+  displayDuration,
+  adNumber = 1,
+  totalAds = 1
 }: ImageAdDisplayProps) {
   const duration = displayDuration || advertisement.displayDuration || 5;
   const [timeRemaining, setTimeRemaining] = useState(duration);
@@ -133,6 +137,11 @@ export function ImageAdDisplay({
         <div className="p-3 sm:p-4 md:p-6 bg-muted/50 border-t flex-shrink-0">
           {!canContinue ? (
             <div className="text-center space-y-2 sm:space-y-3">
+              {totalAds > 1 && (
+                <p className="text-xs font-semibold text-primary">
+                  Ad {adNumber} of {totalAds}
+                </p>
+              )}
               <p className="text-xs sm:text-sm text-muted-foreground">
                 Please view this ad to continue
               </p>
@@ -165,13 +174,18 @@ export function ImageAdDisplay({
                     {advertisement.description}
                   </p>
                 )}
+                {totalAds > 1 && adNumber < totalAds && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {totalAds - adNumber} more ad{totalAds - adNumber > 1 ? 's' : ''} remaining
+                  </p>
+                )}
               </div>
               <Button 
                 onClick={handleContinue}
                 size="lg"
                 className="w-full sm:w-auto min-w-[140px] text-sm sm:text-base"
               >
-                Continue
+                {totalAds > 1 && adNumber < totalAds ? 'Next Ad' : 'Continue'}
               </Button>
             </div>
           )}

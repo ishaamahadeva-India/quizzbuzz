@@ -433,6 +433,138 @@ export async function selectAdForCampaign(
 }
 
 /**
+ * Selects multiple ads (up to count) for sequential display in tournaments
+ * Returns up to 3 ads with different durations (9s, 6s, 5s)
+ */
+export async function selectMultipleAdsForEntry(
+  firestore: Firestore,
+  tournamentId: string,
+  userId: string,
+  count: number = 3
+): Promise<ImageAdvertisement[]> {
+  const activeAds = await getActiveAdsForTournament(firestore, tournamentId);
+  
+  if (activeAds.length === 0) {
+    return [];
+  }
+
+  // Filter by user eligibility
+  const eligibleAds = activeAds.filter((ad) => {
+    // Check per-user view limit
+    if (ad.maxViewsPerUser) {
+      // This will be checked when creating the view
+      // For now, we'll filter in the view creation function
+    }
+    return true;
+  });
+
+  // Sort by priority: ads with allowMultipleViews=true or repeatInterval!='never' first
+  eligibleAds.sort((a, b) => {
+    const aAllowsRepeat = a.allowMultipleViews || (a.repeatInterval && a.repeatInterval !== 'never');
+    const bAllowsRepeat = b.allowMultipleViews || (b.repeatInterval && b.repeatInterval !== 'never');
+    
+    if (aAllowsRepeat && !bAllowsRepeat) return -1;
+    if (!aAllowsRepeat && bAllowsRepeat) return 1;
+    
+    // Then by priority
+    return b.priority - a.priority;
+  });
+
+  // Select up to count ads, avoiding duplicates
+  const selectedAds: ImageAdvertisement[] = [];
+  const usedIds = new Set<string>();
+
+  for (const ad of eligibleAds) {
+    if (selectedAds.length >= count) break;
+    
+    // Skip if already selected (avoid duplicates)
+    if (!usedIds.has(ad.id)) {
+      selectedAds.push(ad);
+      usedIds.add(ad.id);
+    }
+  }
+
+  // If we don't have enough unique ads, we can repeat the highest priority ad
+  // but only if it allows multiple views
+  while (selectedAds.length < count && eligibleAds.length > 0) {
+    const topAd = eligibleAds[0];
+    if (topAd.allowMultipleViews || (topAd.repeatInterval && topAd.repeatInterval !== 'never')) {
+      selectedAds.push(topAd);
+    } else {
+      break; // Can't repeat this ad
+    }
+  }
+
+  return selectedAds;
+}
+
+/**
+ * Selects multiple ads (up to count) for sequential display in campaigns
+ * Returns up to 3 ads with different durations (9s, 6s, 5s)
+ */
+export async function selectMultipleAdsForCampaign(
+  firestore: Firestore,
+  campaignId: string,
+  userId: string,
+  count: number = 3
+): Promise<ImageAdvertisement[]> {
+  const activeAds = await getActiveAdsForCampaign(firestore, campaignId);
+  
+  if (activeAds.length === 0) {
+    return [];
+  }
+
+  // Filter by user eligibility
+  const eligibleAds = activeAds.filter((ad) => {
+    // Check per-user view limit
+    if (ad.maxViewsPerUser) {
+      // This will be checked when creating the view
+      // For now, we'll filter in the view creation function
+    }
+    return true;
+  });
+
+  // Sort by priority: ads with allowMultipleViews=true or repeatInterval!='never' first
+  eligibleAds.sort((a, b) => {
+    const aAllowsRepeat = a.allowMultipleViews || (a.repeatInterval && a.repeatInterval !== 'never');
+    const bAllowsRepeat = b.allowMultipleViews || (b.repeatInterval && b.repeatInterval !== 'never');
+    
+    if (aAllowsRepeat && !bAllowsRepeat) return -1;
+    if (!aAllowsRepeat && bAllowsRepeat) return 1;
+    
+    // Then by priority
+    return b.priority - a.priority;
+  });
+
+  // Select up to count ads, avoiding duplicates
+  const selectedAds: ImageAdvertisement[] = [];
+  const usedIds = new Set<string>();
+
+  for (const ad of eligibleAds) {
+    if (selectedAds.length >= count) break;
+    
+    // Skip if already selected (avoid duplicates)
+    if (!usedIds.has(ad.id)) {
+      selectedAds.push(ad);
+      usedIds.add(ad.id);
+    }
+  }
+
+  // If we don't have enough unique ads, we can repeat the highest priority ad
+  // but only if it allows multiple views
+  while (selectedAds.length < count && eligibleAds.length > 0) {
+    const topAd = eligibleAds[0];
+    if (topAd.allowMultipleViews || (topAd.repeatInterval && topAd.repeatInterval !== 'never')) {
+      selectedAds.push(topAd);
+    } else {
+      break; // Can't repeat this ad
+    }
+  }
+
+  return selectedAds;
+}
+
+/**
  * Increments the view count for an advertisement
  */
 export function incrementAdViews(
