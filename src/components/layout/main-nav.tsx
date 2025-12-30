@@ -34,7 +34,7 @@ const navItems = [
   { href: '/fantasy/prizes', label: 'Prize Pools', icon: Award },
   { href: '/fan-zone', label: 'Fan Zone', icon: Users },
   { href: '/insights', label: 'Insights', icon: BarChart2 },
-  { href: '/redeem', label: 'Rewards', icon: Gift },
+  { href: '/rewards', label: 'Rewards', icon: Gift },
   { href: '/profile', label: 'Profile', icon: User },
   { href: '/play', label: 'Play', icon: Play, isComingSoon: true },
 ];

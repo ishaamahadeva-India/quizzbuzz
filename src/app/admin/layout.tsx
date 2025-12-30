@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: Home },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/admin/rewards', label: 'Rewards', icon: Coins },
   { href: '/admin/campaign-estimator', label: 'Campaign Estimator', icon: Calculator },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/points', label: 'Points Management', icon: Coins },

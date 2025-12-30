@@ -83,6 +83,12 @@ export type UserProfile = {
     subscriptionPlan?: 'annual';
     paymentId?: string; // Cashfree payment order ID
     subscriptionStatus?: 'active' | 'expired' | 'cancelled';
+    // Daily rewards tracking
+    lastDailyLoginDate?: string; // YYYY-MM-DD format
+    lastDailyGameDate?: string; // YYYY-MM-DD format
+    dailyLoginStreak?: number; // Consecutive days of login
+    totalDailyLogins?: number; // Total number of daily logins
+    totalDailyGames?: number; // Total number of daily games played
 };
 
 export type UserPrediction = {
@@ -672,6 +678,43 @@ export type CouponRedemption = {
   discountAmount: number;
   originalAmount?: number;
   finalAmount?: number;
+};
+
+// Voucher System Types
+export type Voucher = {
+  id: string;
+  name: string; // e.g., "Amazon Voucher ₹500", "Petrol Voucher ₹99"
+  description?: string;
+  voucherType: 'amazon' | 'petrol' | 'grocery' | 'other';
+  pointsRequired: number; // Points needed to redeem
+  value: number; // Voucher value in ₹
+  imageUrl?: string;
+  terms?: string; // Terms and conditions
+  active: boolean; // Whether voucher is available for redemption
+  stock?: number; // Number of vouchers available (undefined = unlimited)
+  redeemedCount?: number; // Number of times this voucher has been redeemed
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type VoucherRedemption = {
+  id: string;
+  userId: string;
+  voucherId: string;
+  voucherName: string;
+  pointsSpent: number;
+  voucherValue: number;
+  voucherCode?: string; // Actual voucher code if generated
+  status: 'pending' | 'fulfilled' | 'cancelled';
+  redeemedAt: Date;
+  fulfilledAt?: Date;
+  notes?: string; // Admin notes
+};
+
+export type DailyRewardConfig = {
+  dailyLoginPoints: number; // Points for daily login (default: 99)
+  dailyGamePoints: number; // Points for playing at least 1 game (default: varies)
+  dailyGameRequirement: 'any_game' | 'fantasy_cricket' | 'fantasy_movie' | 'quiz'; // What counts as a game
 };
 
 // Image Advertisement Types

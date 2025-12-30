@@ -191,6 +191,14 @@ export default function TournamentPage() {
 
       await addTournamentEntry(firestore, entryData);
 
+      // Record game play for daily rewards
+      if (user?.uid) {
+        const { recordGamePlay } = await import('@/firebase/firestore/daily-rewards');
+        recordGamePlay(firestore, user.uid, 'fantasy_cricket').catch(err => {
+          console.error('Failed to record game play:', err);
+        });
+      }
+
       toast({
         title: 'Successfully Joined!',
         description: tournament.entryFee?.type === 'free' 
