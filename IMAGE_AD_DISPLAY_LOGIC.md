@@ -157,10 +157,34 @@ If ads are not showing, check:
 
 ## Recommended Fixes
 
-1. **Show ads on tournament page load** (not just on join click)
-2. **Relax filtering logic** - if no ads pass filters, show ads anyway (with warning)
-3. **Reset hasRunRef** properly on unmount
-4. **Add ads to landing page** (optional)
-5. **Show match ads on all devices** (not just mobile)
-6. **Add better error logging** to debug why ads aren't showing
+1. ✅ **Show ads on tournament page load** (not just on join click) - **COMPLETED**
+   - Added useEffect to show ads automatically on page load with 500ms delay
+   - Location: `src/app/fantasy/cricket/tournament/[id]/page.tsx`
+
+2. ✅ **Relax filtering logic** - if no ads pass filters, show ads anyway (with warning) - **COMPLETED**
+   - If ads are filtered out but exist, show them anyway for better UX
+   - Added console warnings when ads are filtered
+   - Location: `src/components/ads/image-ad-gate.tsx`
+
+3. ✅ **Reset hasRunRef** properly on unmount - **COMPLETED**
+   - Resets when targetId changes, allowing ads on different pages
+   - Location: `src/components/ads/image-ad-gate.tsx`
+
+4. ⚠️ **Add ads to landing page** (optional) - **NOT IMPLEMENTED**
+   - Considered too aggressive - ads already show on individual tournament/campaign pages
+   - Can be added later if needed for revenue optimization
+
+5. ✅ **Show match ads on all devices** (not just mobile) - **COMPLETED**
+   - Removed mobile-only check (width < 768px)
+   - Ads now show on desktop, tablet, and mobile
+   - Location: `src/app/fantasy/cricket/match/[id]/page.tsx`
+
+6. ✅ **Add better error logging** to debug why ads aren't showing - **COMPLETED**
+   - Added comprehensive console logging with context:
+     - When no ads available (with reason)
+     - When ads are filtered out (with filtering reasons)
+     - When ads load successfully (with ad IDs)
+     - When errors occur (with full error details and context)
+   - All logs prefixed with `[ImageAdGate]` for easy filtering
+   - Location: `src/components/ads/image-ad-gate.tsx`
 

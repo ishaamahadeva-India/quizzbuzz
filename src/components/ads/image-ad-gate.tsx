@@ -54,6 +54,13 @@ export function ImageAdGate({
     
     const targetId = tournamentId || campaignId;
     if (!targetId || !firestore || !user?.uid) {
+      console.warn('[ImageAdGate] Missing required parameters', {
+        hasTargetId: !!targetId,
+        hasFirestore: !!firestore,
+        hasUserId: !!user?.uid,
+        tournamentId,
+        campaignId
+      });
       setIsLoading(false);
       return;
     }
@@ -86,15 +93,29 @@ export function ImageAdGate({
         
         if (!selectedAds || selectedAds.length === 0) {
           // No ads available, allow entry or show error
+          console.warn('[ImageAdGate] No ads available', {
+            targetId,
+            isCampaign: !!campaignId,
+            userId: user.uid,
+            reason: 'No active ads found in database for this tournament/campaign'
+          });
           setIsLoading(false);
           if (required) {
             // If required but no ads, still allow (fallback)
+            console.warn('[ImageAdGate] Ads required but none available, allowing entry anyway');
             onCompleteRef.current();
           } else if (onCancelRef.current) {
             onCancelRef.current();
           }
           return;
         }
+
+        console.log('[ImageAdGate] Selected ads:', {
+          count: selectedAds.length,
+          adIds: selectedAds.map(ad => ad.id),
+          targetId,
+          userId: user.uid
+        });
 
         // Filter ads based on user view limits and repeat settings
         const eligibleAds: ImageAdvertisement[] = [];
@@ -159,7 +180,17 @@ export function ImageAdGate({
           // If we have selectedAds but they were all filtered, try showing them anyway
           // (user might have viewed them before, but we still want to show ads)
           if (selectedAds.length > 0) {
-            console.log('All ads filtered out, showing ads anyway for better UX');
+            console.warn('[ImageAdGate] All ads filtered out, showing ads anyway for better UX', {
+              selectedAdsCount: selectedAds.length,
+              filteredOutReasons: selectedAds.map(ad => ({
+                adId: ad.id,
+                maxViewsPerUser: ad.maxViewsPerUser,
+                repeatInterval: ad.repeatInterval,
+                allowMultipleViews: ad.allowMultipleViews
+              })),
+              targetId,
+              userId: user.uid
+            });
             // Show ads anyway, but limit to 1-2 ads if user has viewed before
             const adsToShowAnyway = selectedAds.slice(0, 2);
             if (!cancelled) {
@@ -171,6 +202,12 @@ export function ImageAdGate({
           }
           
           // If no ads at all, allow entry
+          console.warn('[ImageAdGate] No eligible ads after filtering, allowing entry', {
+            selectedAdsCount: selectedAds.length,
+            eligibleAdsCount: 0,
+            targetId,
+            userId: user.uid
+          });
           setHasViewed(true);
           setIsLoading(false);
           setTimeout(() => {
@@ -181,6 +218,13 @@ export function ImageAdGate({
           return;
         }
 
+        console.log('[ImageAdGate] Eligible ads after filtering:', {
+          eligibleCount: eligibleAds.length,
+          eligibleAdIds: eligibleAds.map(ad => ad.id),
+          targetId,
+          userId: user.uid
+        });
+
         // Limit to 3 ads max
         const adsToShow = eligibleAds.slice(0, 3);
 
@@ -188,9 +232,23 @@ export function ImageAdGate({
           setAds(adsToShow);
           setCurrentAdIndex(0);
           setIsLoading(false);
+          console.log('[ImageAdGate] Ads loaded successfully', {
+            adsToShow: adsToShow.length,
+            adIds: adsToShow.map(ad => ad.id),
+            targetId,
+            userId: user.uid
+          });
         }
       } catch (error) {
-        console.error('Error loading ads:', error);
+        console.error('[ImageAdGate] Error loading ads:', {
+          error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+          targetId,
+          isCampaign: !!campaignId,
+          userId: user?.uid,
+          firestoreReady: !!firestore
+        });
         // On error, allow entry (don't block user)
         if (!cancelled) {
           setIsLoading(false);
