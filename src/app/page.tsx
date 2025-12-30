@@ -230,6 +230,27 @@ function SponsoredAd() {
     
     const { data: ads, isLoading, error } = useCollection(adsQuery);
     
+    // Sort by createdAt descending client-side and get the first one
+    const advertisement = useMemo(() => {
+        if (!ads || ads.length === 0) return null;
+        
+        const sortedAds = [...ads].sort((a, b) => {
+            const dateA = toDate(a.createdAt);
+            const dateB = toDate(b.createdAt);
+            if (!dateA && !dateB) return 0;
+            if (!dateA) return 1;
+            if (!dateB) return -1;
+            return dateB.getTime() - dateA.getTime();
+        });
+        
+        return sortedAds[0] as Advertisement & { id: string };
+    }, [ads]);
+    
+    // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+    // Check if ad is within date range (if dates are set)
+    // Use useState and useEffect to avoid hydration mismatches
+    const [isDateValid, setIsDateValid] = useState<boolean | null>(null);
+    
     // Debug logging (client-side only, in development)
     useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
@@ -252,57 +273,12 @@ function SponsoredAd() {
         }
     }, [ads, error]);
     
-    // Sort by createdAt descending client-side and get the first one
-    const advertisement = useMemo(() => {
-        if (!ads || ads.length === 0) return null;
-        
-        const sortedAds = [...ads].sort((a, b) => {
-            const dateA = toDate(a.createdAt);
-            const dateB = toDate(b.createdAt);
-            if (!dateA && !dateB) return 0;
-            if (!dateA) return 1;
-            if (!dateB) return -1;
-            return dateB.getTime() - dateA.getTime();
-        });
-        
-        return sortedAds[0] as Advertisement & { id: string };
-    }, [ads]);
-    
-    if (isLoading) {
-        return (
-            <Card className="bg-gradient-to-br from-accent/10">
-                <CardHeader>
-                    <Skeleton className="h-6 w-24" />
-                    <Skeleton className="h-4 w-48 mt-2" />
-                </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-6 w-full" />
-                    <Skeleton className="h-4 w-3/4 mt-2" />
-                </CardContent>
-                <CardFooter>
-                    <Skeleton className="h-10 w-full" />
-                </CardFooter>
-            </Card>
-        );
-    }
-    
-    if (error) {
-        console.error('Error loading advertisement:', error);
-        return null; // Don't show error to users, just fail silently
-    }
-    
-    if (!advertisement) {
-        if (process.env.NODE_ENV === 'development') {
-            console.log('No active advertisement found for home-sidebar-sponsored position');
-        }
-        return null; // Don't show anything if no active ad
-    }
-    
-    // Check if ad is within date range (if dates are set)
-    // Use useState and useEffect to avoid hydration mismatches
-    const [isDateValid, setIsDateValid] = useState<boolean | null>(null);
-    
     useEffect(() => {
+        if (!advertisement) {
+            setIsDateValid(false);
+            return;
+        }
+        
         const now = new Date();
         const startDate = toDate(advertisement.startDate);
         const endDate = toDate(advertisement.endDate);
@@ -339,6 +315,37 @@ function SponsoredAd() {
             console.log('Rendering advertisement:', advertisement.title);
         }
     }, [advertisement]);
+    
+    // NOW SAFE TO HAVE CONDITIONAL RETURNS (all hooks called above)
+    if (isLoading) {
+        return (
+            <Card className="bg-gradient-to-br from-accent/10">
+                <CardHeader>
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-4 w-48 mt-2" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-6 w-full" />
+                    <Skeleton className="h-4 w-3/4 mt-2" />
+                </CardContent>
+                <CardFooter>
+                    <Skeleton className="h-10 w-full" />
+                </CardFooter>
+            </Card>
+        );
+    }
+    
+    if (error) {
+        console.error('Error loading advertisement:', error);
+        return null; // Don't show error to users, just fail silently
+    }
+    
+    if (!advertisement) {
+        if (process.env.NODE_ENV === 'development') {
+            console.log('No active advertisement found for home-sidebar-sponsored position');
+        }
+        return null; // Don't show anything if no active ad
+    }
     
     // Don't render until date check is complete (prevents hydration mismatch)
     if (isDateValid === null) {
@@ -513,11 +520,17 @@ function ArticleList({ category }: { category: string }) {
                       <div className="mt-1 text-xs text-muted-foreground">
                         <span>
                           Published on{' '}
-                          {new Date().toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
+                          {article.publishedAt 
+                            ? (() => {
+                                const pubDate = toDate(article.publishedAt);
+                                if (!pubDate) return 'Recently';
+                                const year = pubDate.getFullYear();
+                                const month = String(pubDate.getMonth() + 1).padStart(2, '0');
+                                const day = String(pubDate.getDate()).padStart(2, '0');
+                                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                                return `${monthNames[pubDate.getMonth()]} ${day}, ${year}`;
+                              })()
+                            : 'Recently'}
                         </span>
                       </div>
                       <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
