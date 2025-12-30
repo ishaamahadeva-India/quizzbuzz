@@ -7,7 +7,7 @@ import { useUser, useDoc, useFirestore, useCollection } from '@/firebase';
 import type { UserProfile, FantasyMatch } from '@/lib/types';
 import { doc, collection } from 'firebase/firestore';
 import { DisclaimerModal } from '@/components/fantasy/disclaimer-modal';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,12 @@ function SeriesTab() {
     const firestore = useFirestore();
     const tournamentsQuery = firestore ? collection(firestore, 'cricket-tournaments') : null;
     const { data: tournaments, isLoading } = useCollection(tournamentsQuery);
+    const [isClient, setIsClient] = useState(false);
+    
+    // Ensure we're on client-side to prevent hydration mismatches
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     if (isLoading) {
         return (
@@ -54,29 +60,47 @@ function SeriesTab() {
         );
     }
 
+    // Helper function to format dates consistently (DD/MM/YYYY format)
+    // Always use same format to prevent hydration mismatch
+    const formatDate = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${day}/${month}/${year}`;
+    };
+
     // Sort tournaments: live first, then upcoming, then completed
-    const sortedTournaments = [...tournaments].sort((a, b) => {
-        const statusOrder = { live: 0, upcoming: 1, completed: 2 };
-        const aOrder = statusOrder[a.status as keyof typeof statusOrder] ?? 3;
-        const bOrder = statusOrder[b.status as keyof typeof statusOrder] ?? 3;
-        if (aOrder !== bOrder) return aOrder - bOrder;
-        
-        // If same status, sort by start date
-        const aDate = a.startDate?.seconds ? new Date(a.startDate.seconds * 1000) : new Date(0);
-        const bDate = b.startDate?.seconds ? new Date(b.startDate.seconds * 1000) : new Date(0);
-        return bDate.getTime() - aDate.getTime();
-    });
+    // Use useMemo to prevent hydration mismatches (client-side only)
+    const sortedTournaments = useMemo(() => {
+        if (!tournaments) return [];
+        return [...tournaments].sort((a, b) => {
+            const statusOrder = { live: 0, upcoming: 1, completed: 2 };
+            const aOrder = statusOrder[a.status as keyof typeof statusOrder] ?? 3;
+            const bOrder = statusOrder[b.status as keyof typeof statusOrder] ?? 3;
+            if (aOrder !== bOrder) return aOrder - bOrder;
+            
+            // If same status, sort by start date
+            const aDate = a.startDate?.seconds ? new Date(a.startDate.seconds * 1000) : new Date(0);
+            const bDate = b.startDate?.seconds ? new Date(b.startDate.seconds * 1000) : new Date(0);
+            return bDate.getTime() - aDate.getTime();
+        });
+    }, [tournaments]);
 
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedTournaments.map((tournament) => {
+                    // Format dates consistently (avoid locale-dependent toLocaleDateString)
                     const startDate = tournament.startDate?.seconds 
                         ? new Date(tournament.startDate.seconds * 1000) 
                         : null;
                     const endDate = tournament.endDate?.seconds 
                         ? new Date(tournament.endDate.seconds * 1000) 
                         : null;
+                    
+                    const startDateStr = startDate ? formatDate(startDate) : null;
+                    const endDateStr = endDate ? formatDate(endDate) : null;
+                    
                     const isLive = tournament.status === 'live';
                     const isUpcoming = tournament.status === 'upcoming';
                     const isCompleted = tournament.status === 'completed';
@@ -119,13 +143,19 @@ function SeriesTab() {
                                 )}
                                 
                                 <div className="space-y-2 text-sm">
-                                    {startDate && (
+                                    {isClient && startDateStr && (
                                         <div className="flex items-center gap-2 text-muted-foreground">
                                             <Calendar className="w-4 h-4" />
                                             <span>
-                                                {startDate.toLocaleDateString()} 
-                                                {endDate && ` - ${endDate.toLocaleDateString()}`}
+                                                {startDateStr} 
+                                                {endDateStr && ` - ${endDateStr}`}
                                             </span>
+                                        </div>
+                                    )}
+                                    {!isClient && startDate && (
+                                        <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Calendar className="w-4 h-4" />
+                                            <Skeleton className="h-4 w-32" />
                                         </div>
                                     )}
                                     {tournament.venue && (
