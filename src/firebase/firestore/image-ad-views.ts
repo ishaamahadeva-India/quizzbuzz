@@ -26,9 +26,11 @@ export function createImageAdView(
 ) {
   const viewsCollection = collection(firestore, 'image-ad-views');
   // Preserve wasCompleted and clicked if provided, otherwise use defaults
+  // Also add updatedAt timestamp for consistency
   const docToSave = {
     ...viewData,
     viewedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(), // Add updatedAt during creation
     wasCompleted: viewData.wasCompleted !== undefined ? viewData.wasCompleted : false,
     clicked: viewData.clicked !== undefined ? viewData.clicked : false,
   };
