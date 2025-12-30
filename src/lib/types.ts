@@ -170,38 +170,43 @@ export type CampaignMovie = {
 // Campaign Type
 export type CampaignType = 'single_movie' | 'multiple_movies';
 
-// Entry Fee Configuration
+// Entry Fee Configuration - REMOVED
+// All contests are FREE - no entry fees allowed
+// This type is kept for backward compatibility but should not be used
+// @deprecated - All campaigns are free contests
 export type EntryFeeConfig = {
-    type: 'free' | 'paid';
-    amount?: number; // In rupees
-    tiers?: Array<{ amount: number; label: string }>; // e.g., ₹49, ₹99, ₹199
+    type: 'free'; // Always 'free' - paid contests not allowed
 }
 
 // Prize Tier Configuration
 export type PrizeTier = {
     rankStart: number; // Starting rank (inclusive)
     rankEnd: number; // Ending rank (inclusive), -1 means "and above"
-    prizeAmount: number; // Prize amount (voucher value)
-    prizeType: 'voucher' | 'cash' | 'coupons' | 'tickets' | 'ott_subscription' | 'merchandise';
+    prizeAmount: number; // Prize value in INR (for display only, not cash)
+    prizeType: 'merchandise' | 'tickets' | 'ott_subscription' | 'experience' | 'travel' | 'certificate' | 'voucher' | 'coupons';
     description?: string; // Optional description
     minParticipants?: number; // Minimum participants required for this tier to be active
+    nonTransferable?: boolean; // Prizes are non-transferable (default: true)
+    nonCashRedeemable?: boolean; // Prizes cannot be redeemed for cash (default: true)
 }
 
 // Prize Distribution Configuration
 export type PrizeDistribution = {
     tiers: PrizeTier[]; // Prize tiers
-    totalPrizePool?: number; // Total prize pool value (optional, for display)
+    totalPrizePool?: number; // Total sponsored rewards pool value (optional, for display). Display as "Sponsored Rewards Pool"
     currency?: string; // Currency code (default: 'INR')
     notes?: string; // Additional notes about prize distribution
 }
 
 // Reward Configuration
 export type RewardConfig = {
-    type: 'cash' | 'coupons' | 'tickets' | 'ott_subscription' | 'merchandise' | 'badges' | 'xp';
-    value?: number; // For cash
+    type: 'merchandise' | 'coupons' | 'tickets' | 'ott_subscription' | 'badges' | 'xp' | 'experience' | 'travel' | 'certificate' | 'voucher';
+    value?: number; // Prize value in INR (for display only, not cash)
     description?: string;
     rankRange?: { start: number; end: number }; // e.g., rank 1-3 gets this reward
     minParticipants?: number; // Minimum participants required
+    nonTransferable?: boolean; // Rewards are non-transferable (default: true)
+    nonCashRedeemable?: boolean; // Rewards cannot be redeemed for cash (default: true)
 }
 
 // Points Configuration
@@ -280,31 +285,34 @@ export type CampaignLeaderboard = {
 }
 
 // Campaign Entry (User participation)
+// All contests are FREE - no entry fees or payments
 export type CampaignEntry = {
     id: string;
     userId: string;
     campaignId: string;
-    entryFee?: number;
-    entryFeeTier?: string;
-    paymentStatus?: 'pending' | 'paid' | 'refunded';
-    paymentMethod?: 'upi' | 'bank' | 'wallet';
+    // REMOVED: entryFee, entryFeeTier, paymentStatus, paymentMethod
+    // All contests are free - no payment collection
     totalPoints: number;
     rank?: number;
     joinedAt: Date;
     city?: string;
     state?: string;
+    isFreeContest: true; // Always true - all contests are free
+    fundedBy: 'sponsor'; // Always sponsor-funded
 }
 
 // Reward Payout
+// All rewards are non-cash, sponsor-funded
 export type RewardPayout = {
     id: string;
     campaignId: string;
     userId: string;
     reward: RewardConfig;
     rank: number;
-    status: 'pending' | 'approved' | 'paid' | 'rejected';
-    paymentMethod?: 'upi' | 'bank' | 'wallet';
-    paymentDetails?: string;
+    status: 'pending' | 'approved' | 'distributed' | 'rejected'; // Changed 'paid' to 'distributed'
+    // REMOVED: paymentMethod, paymentDetails (no cash payments)
+    distributionMethod?: 'courier' | 'email' | 'in_app' | 'pickup'; // How non-cash reward is delivered
+    distributionDetails?: string; // Tracking number, voucher code, etc.
     processedBy?: string;
     processedAt?: Date;
     notes?: string;
@@ -316,7 +324,7 @@ export type FantasyCampaign = {
     title: string;
     campaignType: CampaignType;
     description?: string;
-    prizePool?: string;
+    prizePool?: string; // @deprecated - Use prizeDistribution.totalPrizePool instead. Display as "Sponsored Rewards Pool"
     sponsorName?: string;
     sponsorLogo?: string;
     
@@ -336,11 +344,17 @@ export type FantasyCampaign = {
     maxParticipants?: number;
     
     // Entry and rewards
-    entryFee: EntryFeeConfig;
+    // @deprecated - entryFee is kept for backward compatibility but all contests are free
+    entryFee?: EntryFeeConfig; // Optional - all contests are free
     rewards?: RewardConfig[];
     
+    // Compliance fields (REQUIRED for all campaigns)
+    isFreeContest: true; // Always true - all contests are free
+    fundedBy: 'sponsor'; // Always sponsor-funded
+    nonCashOnly: true; // Always true - no cash prizes allowed
+    
     // Prize distribution
-    prizeDistribution?: PrizeDistribution; // Structured prize tiers
+    prizeDistribution?: PrizeDistribution; // Structured prize tiers (non-cash only)
     
     // Events
     events?: FantasyEvent[]; // Events within this campaign
@@ -558,7 +572,7 @@ export type CricketTournament = {
     maxParticipants?: number;
     events?: TournamentEvent[];
     matches?: string[]; // Array of match IDs
-    prizePool?: string;
+    prizePool?: string; // @deprecated - Use prizeDistribution.totalPrizePool instead. Display as "Sponsored Rewards Pool"
     sponsorName?: string;
     sponsorLogo?: string;
     visibility: 'public' | 'private' | 'invite_only';

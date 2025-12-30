@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Plus, Trash2, Clock } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Clock, Info } from 'lucide-react';
 import { useEffect } from 'react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -97,7 +97,7 @@ const campaignSchema = z.object({
       rankStart: z.number().min(1),
       rankEnd: z.number().min(-1), // -1 means "and above"
       prizeAmount: z.number().min(0),
-      prizeType: z.enum(['voucher', 'cash', 'coupons', 'tickets', 'ott_subscription', 'merchandise']),
+      prizeType: z.enum(['merchandise', 'tickets', 'ott_subscription', 'experience', 'travel', 'certificate', 'voucher', 'coupons']),
       description: z.string().optional(),
       minParticipants: z.number().optional(),
     })),
@@ -112,12 +112,11 @@ const campaignSchema = z.object({
   status: z.enum(['upcoming', 'active', 'completed']),
   visibility: z.enum(['public', 'private', 'invite_only']).default('public'),
   maxParticipants: z.number().optional(),
-  // Entry fee
-  entryFee: z.object({
-    type: z.enum(['free', 'paid']),
-    amount: z.number().optional(),
-    tiers: z.array(z.object({ amount: z.number(), label: z.string() })).optional(),
-  }).default({ type: 'free' }),
+  // REMOVED: Entry fee - all contests are FREE
+  // Compliance fields (auto-set, not user-editable)
+  isFreeContest: z.literal(true).default(true),
+  fundedBy: z.literal('sponsor').default('sponsor'),
+  nonCashOnly: z.literal(true).default(true),
   // Events
   events: z.array(eventSchema).optional(),
 }).refine((data) => {
@@ -159,9 +158,9 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
       status: 'upcoming',
       campaignType: 'single_movie',
       visibility: 'public',
-      entryFee: {
-        type: 'free',
-      },
+      isFreeContest: true,
+      fundedBy: 'sponsor',
+      nonCashOnly: true,
       events: [],
       ...defaultValues,
     },
@@ -183,7 +182,6 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
   });
 
   const campaignType = form.watch('campaignType') || 'single_movie';
-  const entryFeeType = form.watch('entryFee.type') || 'free';
   const campaignStartDate = form.watch('startDate');
   const campaignEndDate = form.watch('endDate');
   
@@ -349,13 +347,19 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
             endDate: event.endDate || data.endDate || data.startDate,
           }));
         }
+        // Ensure compliance fields are always set (all contests are FREE + NON-CASH)
+        const complianceData = {
+          ...data,
+          isFreeContest: true as const,
+          fundedBy: 'sponsor' as const,
+          nonCashOnly: true as const,
+        };
+        
         // CRITICAL DEBUG: Log form data before submission
-        console.log('🔥 FORM SUBMIT - Data being sent to onSubmit:', data);
-        console.log('🔥 FORM SUBMIT - Events in data:', data.events);
-        console.log('🔥 FORM SUBMIT - Events length:', data.events?.length || 0);
-        console.log('🔥 FORM SUBMIT - Form values:', form.getValues());
-        console.log('🔥 FORM SUBMIT - Form events field:', form.getValues('events'));
-        onSubmit(data);
+        console.log('🔥 FORM SUBMIT - Data being sent to onSubmit:', complianceData);
+        console.log('🔥 FORM SUBMIT - Events in data:', complianceData.events);
+        console.log('🔥 FORM SUBMIT - Events length:', complianceData.events?.length || 0);
+        onSubmit(complianceData);
       }, (errors) => {
         console.error('❌ Form validation errors:', errors);
         console.error('❌ Form values at error:', form.getValues());
@@ -903,116 +907,38 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-primary/5 border-primary/20">
           <CardHeader>
-            <CardTitle>Entry Fee & Rewards</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="w-5 h-5 text-primary" />
+              Compliance & Contest Model
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="entryFee.type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Entry Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || 'free'}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select entry type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="free">Free Entry</SelectItem>
-                      <SelectItem value="paid">Paid Entry</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {entryFeeType === 'paid' && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="entryFee.amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Entry Fee Amount (₹)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="e.g., 99"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                        />
-                      </FormControl>
-                      <FormDescription>Single entry fee amount</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="text-sm text-muted-foreground">
-                  <p className="mb-2">Or use multiple tiers (₹49, ₹99, ₹199):</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const currentTiers = form.getValues('entryFee.tiers') || [];
-                      form.setValue('entryFee.tiers', [
-                        ...currentTiers,
-                        { amount: 49, label: '₹49' },
-                      ]);
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Tier
-                  </Button>
-                  {form.watch('entryFee.tiers')?.map((tier, index) => (
-                    <div key={index} className="flex items-center gap-2 mt-2">
-                      <Input
-                        type="number"
-                        placeholder="Amount"
-                        value={tier.amount}
-                        onChange={(e) => {
-                          const tiers = form.getValues('entryFee.tiers') || [];
-                          tiers[index].amount = Number(e.target.value);
-                          form.setValue('entryFee.tiers', tiers);
-                        }}
-                      />
-                      <Input
-                        placeholder="Label"
-                        value={tier.label}
-                        onChange={(e) => {
-                          const tiers = form.getValues('entryFee.tiers') || [];
-                          tiers[index].label = e.target.value;
-                          form.setValue('entryFee.tiers', tiers);
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          const tiers = form.getValues('entryFee.tiers') || [];
-                          form.setValue('entryFee.tiers', tiers.filter((_, i) => i !== index));
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
+                ✓ Free Contest
+              </Badge>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                ✓ Sponsor-Funded
+              </Badge>
+              <Badge variant="outline" className="bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300">
+                ✓ Non-Cash Only
+              </Badge>
+            </div>
+            <p className="text-muted-foreground mt-2">
+              All contests are FREE to enter. Prizes are sponsor-funded, non-cash rewards only. 
+              No entry fees or cash prizes are allowed.
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Prize Distribution (Optional)</CardTitle>
+            <CardTitle>Sponsored Rewards Distribution (Optional)</CardTitle>
             <CardDescription>
-              Configure prize tiers based on rankings. Prizes will be distributed based on final leaderboard positions.
+              Configure reward tiers based on rankings. All rewards are non-cash, sponsor-funded. 
+              Rewards will be distributed based on final leaderboard positions.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -1021,7 +947,7 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
               name="prizeDistribution.totalPrizePool"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Total Prize Pool (Optional)</FormLabel>
+                  <FormLabel>Sponsored Rewards Pool (Optional)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -1032,7 +958,7 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
                     />
                   </FormControl>
                   <FormDescription>
-                    Total value of all prizes combined (for display purposes)
+                    Total value of all non-cash rewards combined (for display purposes only)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -1074,7 +1000,7 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
                       rankStart: 1,
                       rankEnd: 1,
                       prizeAmount: 0,
-                      prizeType: 'voucher',
+                      prizeType: 'merchandise',
                       minParticipants: undefined,
                     });
                   }}
@@ -1154,7 +1080,7 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
                         name={`prizeDistribution.tiers.${index}.prizeAmount`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Prize Amount</FormLabel>
+                            <FormLabel>Reward Value (₹)</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -1173,7 +1099,7 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
                         name={`prizeDistribution.tiers.${index}.prizeType`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Prize Type</FormLabel>
+                            <FormLabel>Reward Type</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger>
@@ -1181,14 +1107,19 @@ export function FantasyCampaignForm({ onSubmit, defaultValues }: FantasyCampaign
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="voucher">Voucher</SelectItem>
-                                <SelectItem value="cash">Cash</SelectItem>
-                                <SelectItem value="coupons">Coupons</SelectItem>
+                                <SelectItem value="merchandise">Merchandise</SelectItem>
                                 <SelectItem value="tickets">Tickets</SelectItem>
                                 <SelectItem value="ott_subscription">OTT Subscription</SelectItem>
-                                <SelectItem value="merchandise">Merchandise</SelectItem>
+                                <SelectItem value="experience">Experience</SelectItem>
+                                <SelectItem value="travel">Travel</SelectItem>
+                                <SelectItem value="certificate">Certificate</SelectItem>
+                                <SelectItem value="voucher">Voucher (Non-Cash)</SelectItem>
+                                <SelectItem value="coupons">Coupons</SelectItem>
                               </SelectContent>
                             </Select>
+                            <FormDescription>
+                              Cash prizes are not allowed. All rewards must be non-cash, sponsor-funded.
+                            </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}

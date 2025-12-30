@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Clock, ListOrdered, Lock, Trophy, ArrowLeft, User, Award, Building } from 'lucide-react';
+import { Check, Clock, ListOrdered, Lock, Trophy, ArrowLeft, User, Award, Building, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { SocialShare } from '@/components/social-share';
@@ -351,7 +351,7 @@ export default function FantasyMovieCampaignPage() {
             <SocialShare
               url={shareUrl}
               title={campaignWithId.title}
-              description={`Join the ${movieTitle} fantasy campaign!${campaignWithId.prizePool ? ` Prize Pool: ${campaignWithId.prizePool}` : ''}`}
+              description={`Join the ${movieTitle} fantasy campaign!${campaignWithId.prizePool ? ` Sponsored Rewards Pool: ${campaignWithId.prizePool}` : ''}`}
               imageUrl={campaignWithId.sponsorLogo}
               variant="outline"
             />
@@ -405,6 +405,25 @@ export default function FantasyMovieCampaignPage() {
                 </div>
             </Card>
         )}
+
+        {/* Compliance Disclaimer */}
+        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="space-y-2 text-sm">
+                <p className="font-semibold text-blue-900 dark:text-blue-100">
+                  Free Contest - No Entry Fee Required
+                </p>
+                <p className="text-blue-800 dark:text-blue-200">
+                  This is a FREE skill-based contest. No entry fee or payment is required to participate. 
+                  All rewards are sponsor-funded, non-cash promotional rewards. 
+                  Winners are determined based solely on skill, knowledge, and performance.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="events" className="w-full">
             <TabsList className="grid w-full grid-cols-2">

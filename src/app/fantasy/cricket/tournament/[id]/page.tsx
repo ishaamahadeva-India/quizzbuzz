@@ -380,7 +380,7 @@ export default function TournamentPage() {
               <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Total Prize Pool</p>
+                    <p className="text-sm text-muted-foreground mb-1">Sponsored Rewards Pool</p>
                     <p className="text-2xl font-bold text-primary">{tournament.prizePool}</p>
                   </div>
                   {tournament.sponsorName && (
@@ -409,6 +409,25 @@ export default function TournamentPage() {
                 variant="overall"
               />
             )}
+
+            {/* Compliance Disclaimer */}
+            <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-2 text-sm">
+                    <p className="font-semibold text-blue-900 dark:text-blue-100">
+                      Free Contest - No Entry Fee Required
+                    </p>
+                    <p className="text-blue-800 dark:text-blue-200">
+                      This is a FREE skill-based contest. No entry fee or payment is required to participate. 
+                      All rewards are sponsor-funded, non-cash promotional rewards. 
+                      Winners are determined based solely on skill, knowledge, and performance.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <div className="flex items-center justify-between pt-4 border-t">
               <div>

@@ -107,8 +107,7 @@ export default function AdminFantasyPage() {
         visibility: (row.visibility || 'public') as 'public' | 'private' | 'invite_only',
         maxParticipants: row.maxParticipants ? parseInt(row.maxParticipants) : undefined,
         entryFee: {
-          type: (row.entryFeeType || 'free') as 'free' | 'paid',
-          amount: row.entryFeeAmount ? parseFloat(row.entryFeeAmount) : undefined,
+          type: 'free' as const, // All contests are free - entryFeeType from CSV is ignored
         },
       });
       
@@ -150,10 +149,9 @@ export default function AdminFantasyPage() {
         startTime: parseCSVDate(row.startTime, 'startTime'),
         status: (row.status || 'upcoming') as "upcoming" | "live" | "completed",
         description: row.description?.trim() || undefined,
-        entryFee: row.entryFeeType ? {
-          type: row.entryFeeType as 'free' | 'paid',
-          amount: row.entryFeeAmount ? parseFloat(row.entryFeeAmount) : undefined,
-        } : undefined,
+        entryFee: {
+          type: 'free' as const, // All contests are free - entryFeeType from CSV is ignored
+        },
         maxParticipants: row.maxParticipants ? parseInt(row.maxParticipants) : undefined,
       });
       

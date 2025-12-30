@@ -11,22 +11,18 @@ import type { CampaignEntry } from '@/lib/types';
 
 /**
  * Aggregation results for campaign entries
+ * All contests are FREE - no revenue tracking
  */
 export type CampaignEntryAggregation = {
   totalEntries: number;
   uniqueParticipants: number;
-  totalRevenue: number;
-  paidEntries: number;
-  pendingEntries: number;
-  refundedEntries: number;
-  averageEntryFee: number;
-  revenueByTier: Record<string, number>; // tier -> revenue
-  revenueByPaymentMethod: Record<string, number>; // method -> revenue
+  // REMOVED: All revenue/payment fields (totalRevenue, paidEntries, etc.)
+  // All contests are free - no payment collection
   entriesByCity: Record<string, number>; // city -> count
   entriesByState: Record<string, number>; // state -> count
-  monthlyRevenue: Array<{
+  monthlyParticipants: Array<{
     month: string;
-    revenue: number;
+    participants: number;
     entries: number;
   }>;
 };
@@ -99,44 +95,8 @@ function aggregateCampaignEntries(
   const totalEntries = entries.length;
   const uniqueParticipants = new Set(entries.map((e) => e.userId)).size;
 
-  // Payment status breakdown
-  const paidEntries = entries.filter(
-    (e) => e.paymentStatus === 'paid'
-  ).length;
-  const pendingEntries = entries.filter(
-    (e) => e.paymentStatus === 'pending'
-  ).length;
-  const refundedEntries = entries.filter(
-    (e) => e.paymentStatus === 'refunded'
-  ).length;
-
-  // Revenue calculations
-  const paidEntriesList = entries.filter(
-    (e) => e.paymentStatus === 'paid' && e.entryFee
-  );
-  const totalRevenue = paidEntriesList.reduce(
-    (sum, e) => sum + (e.entryFee || 0),
-    0
-  );
-  const averageEntryFee =
-    paidEntriesList.length > 0
-      ? totalRevenue / paidEntriesList.length
-      : 0;
-
-  // Revenue by tier
-  const revenueByTier: Record<string, number> = {};
-  paidEntriesList.forEach((e) => {
-    const tier = e.entryFeeTier || 'default';
-    revenueByTier[tier] = (revenueByTier[tier] || 0) + (e.entryFee || 0);
-  });
-
-  // Revenue by payment method
-  const revenueByPaymentMethod: Record<string, number> = {};
-  paidEntriesList.forEach((e) => {
-    const method = e.paymentMethod || 'unknown';
-    revenueByPaymentMethod[method] =
-      (revenueByPaymentMethod[method] || 0) + (e.entryFee || 0);
-  });
+  // REMOVED: All payment status and revenue calculations
+  // All contests are free - no payment collection
 
   // Entries by city
   const entriesByCity: Record<string, number> = {};
@@ -154,12 +114,12 @@ function aggregateCampaignEntries(
     }
   });
 
-  // Monthly revenue
+  // Monthly participants (no revenue tracking)
   const monthlyData: Record<
     string,
-    { revenue: number; participants: Set<string> }
+    { participants: Set<string>; entries: number }
   > = {};
-  paidEntriesList.forEach((e) => {
+  entries.forEach((e) => {
     const date =
       e.joinedAt instanceof Date
         ? e.joinedAt
@@ -172,17 +132,17 @@ function aggregateCampaignEntries(
     });
 
     if (!monthlyData[monthKey]) {
-      monthlyData[monthKey] = { revenue: 0, participants: new Set() };
+      monthlyData[monthKey] = { participants: new Set(), entries: 0 };
     }
-    monthlyData[monthKey].revenue += e.entryFee || 0;
     monthlyData[monthKey].participants.add(e.userId);
+    monthlyData[monthKey].entries += 1;
   });
 
-  const monthlyRevenue = Object.entries(monthlyData)
+  const monthlyParticipants = Object.entries(monthlyData)
     .map(([month, data]) => ({
       month,
-      revenue: data.revenue,
-      entries: data.participants.size,
+      participants: data.participants.size,
+      entries: data.entries,
     }))
     .sort((a, b) => {
       // Sort by date
@@ -194,16 +154,10 @@ function aggregateCampaignEntries(
   return {
     totalEntries,
     uniqueParticipants,
-    totalRevenue,
-    paidEntries,
-    pendingEntries,
-    refundedEntries,
-    averageEntryFee,
-    revenueByTier,
-    revenueByPaymentMethod,
+    // REMOVED: All revenue/payment fields
     entriesByCity,
     entriesByState,
-    monthlyRevenue,
+    monthlyParticipants,
   };
 }
 
@@ -214,16 +168,10 @@ function getEmptyEntryAggregation(): CampaignEntryAggregation {
   return {
     totalEntries: 0,
     uniqueParticipants: 0,
-    totalRevenue: 0,
-    paidEntries: 0,
-    pendingEntries: 0,
-    refundedEntries: 0,
-    averageEntryFee: 0,
-    revenueByTier: {},
-    revenueByPaymentMethod: {},
+    // REMOVED: All revenue/payment fields
     entriesByCity: {},
     entriesByState: {},
-    monthlyRevenue: [],
+    monthlyParticipants: [],
   };
 }
 

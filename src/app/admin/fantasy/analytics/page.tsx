@@ -5,7 +5,7 @@ import { collection } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Users, Trophy, DollarSign, BarChart3, Calendar } from 'lucide-react';
+import { TrendingUp, Users, Trophy, BarChart3, Calendar } from 'lucide-react';
 import type { FantasyCampaign } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -18,9 +18,8 @@ import type { ParticipationsAggregation } from '@/firebase/firestore/participati
 export default function FantasyAnalyticsPage() {
   const firestore = useFirestore();
   const [totalParticipants, setTotalParticipants] = useState(0);
-  const [totalRevenue, setTotalRevenue] = useState(0);
   const [engagementRate, setEngagementRate] = useState(0);
-  const [revenueData, setRevenueData] = useState<Array<{ month: string; revenue: number; participants: number }>>([]);
+  const [participantGrowthData, setParticipantGrowthData] = useState<Array<{ month: string; participants: number; entries: number }>>([]);
   const [loadingMetrics, setLoadingMetrics] = useState(true);
   const [participationsStats, setParticipationsStats] = useState<ParticipationsAggregation | null>(null);
   
@@ -49,7 +48,6 @@ export default function FantasyAnalyticsPage() {
           : entryStats.uniqueParticipants;
         
         setTotalParticipants(participantCount);
-        setTotalRevenue(entryStats.totalRevenue);
         
         // Calculate engagement rate based on participations
         const totalParticipations = participationsData.totalParticipations;
@@ -59,20 +57,20 @@ export default function FantasyAnalyticsPage() {
         // Normalize to 0-100 (assuming 5+ participations per user = 100% engagement)
         setEngagementRate(Math.min(100, Math.round((avgParticipationsPerUser / 5) * 100)));
 
-        // Use monthly revenue from aggregation
-        const revenueChartData = entryStats.monthlyRevenue.length > 0 
-          ? entryStats.monthlyRevenue.map(m => ({
+        // Use monthly participants from aggregation (no revenue tracking)
+        const growthChartData = entryStats.monthlyParticipants.length > 0 
+          ? entryStats.monthlyParticipants.map(m => ({
               month: m.month.split(' ')[0], // Extract month name
-              revenue: m.revenue,
-              participants: m.entries,
+              participants: m.participants,
+              entries: m.entries,
             }))
           : [
-              { month: 'Jan', revenue: 0, participants: 0 },
-              { month: 'Feb', revenue: 0, participants: 0 },
-              { month: 'Mar', revenue: 0, participants: 0 },
+              { month: 'Jan', participants: 0, entries: 0 },
+              { month: 'Feb', participants: 0, entries: 0 },
+              { month: 'Mar', participants: 0, entries: 0 },
             ];
         
-        setRevenueData(revenueChartData);
+        setParticipantGrowthData(growthChartData);
       } catch (error) {
         console.error('Error fetching metrics:', error);
       } finally {
@@ -141,13 +139,13 @@ export default function FantasyAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Entries</CardTitle>
+            <Trophy className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{participationsStats?.totalParticipations || 0}</div>
             <p className="text-xs text-muted-foreground">
-              From paid entries
+              Across all campaigns
             </p>
           </CardContent>
         </Card>
@@ -170,7 +168,7 @@ export default function FantasyAnalyticsPage() {
         <TabsList>
           <TabsTrigger value="campaigns">Campaign Performance</TabsTrigger>
           <TabsTrigger value="events">Event Analytics</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue Analysis</TabsTrigger>
+          <TabsTrigger value="growth">Participant Growth</TabsTrigger>
         </TabsList>
 
         <TabsContent value="campaigns" className="mt-6">
@@ -293,26 +291,26 @@ export default function FantasyAnalyticsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="revenue" className="mt-6">
+        <TabsContent value="growth" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Revenue Analysis</CardTitle>
+              <CardTitle>Participant Growth</CardTitle>
               <CardDescription>
-                Revenue breakdown by campaign and entry type.
+                Monthly participant and entry growth trends. All contests are free.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={revenueData.length > 0 ? revenueData : [
-                  { month: 'No Data', revenue: 0, participants: 0 },
+                <LineChart data={participantGrowthData.length > 0 ? participantGrowthData : [
+                  { month: 'No Data', participants: 0, entries: 0 },
                 ]}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke="#10b981" name="Revenue (₹)" />
-                  <Line type="monotone" dataKey="participants" stroke="#3b82f6" name="Participants" />
+                  <Line type="monotone" dataKey="participants" stroke="#10b981" name="Unique Participants" />
+                  <Line type="monotone" dataKey="entries" stroke="#3b82f6" name="Total Entries" />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>

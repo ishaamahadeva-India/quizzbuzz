@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Trophy, ArrowRight, Ticket } from 'lucide-react';
+import { Trophy, ArrowRight, Ticket, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { FantasyCampaign } from '@/lib/types';
@@ -93,19 +93,45 @@ export default function AllPrizesPage() {
         </div>
       )}
 
-      {/* Info Card */}
-      <Card className="bg-muted/50">
+      {/* Compliance Disclosure Card */}
+      <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Ticket className="w-5 h-5 text-primary" />
-            How Prize Distribution Works
+            <Info className="w-5 h-5 text-primary" />
+            Prize & Participation Disclosure
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>• Prize tiers are based on final leaderboard rankings</p>
-          <p>• Some tiers may require a minimum number of participants to activate</p>
-          <p>• Prizes are distributed after campaign completion</p>
-          <p>• All prizes are subject to terms and conditions</p>
+        <CardContent className="space-y-4 text-sm">
+          <div className="space-y-2">
+            <p className="font-semibold text-base">This is a FREE skill-based contest.</p>
+            <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
+              <li>No entry fee or payment is required to participate.</li>
+              <li>All prizes are non-cash promotional rewards.</li>
+              <li>Prizes are fully funded by sponsors and partners.</li>
+              <li>Participation or ranking does not involve any monetary risk.</li>
+            </ul>
+            <p className="mt-2 text-muted-foreground">Winners are determined based solely on skill, knowledge, and performance.</p>
+          </div>
+          
+          <div className="border-t pt-4">
+            <h4 className="font-semibold mb-2">🎯 Prize Nature</h4>
+            <p className="text-muted-foreground">Prizes are non-transferable, non-exchangeable, and not redeemable for cash. Prizes may include merchandise, experiences, tickets, subscriptions, or other sponsor-provided rewards.</p>
+          </div>
+          
+          <div className="border-t pt-4">
+            <h4 className="font-semibold mb-2">📍 Eligibility</h4>
+            <p className="text-muted-foreground">Open to residents of India aged 18 years and above. Certain rewards may be subject to sponsor-specific eligibility criteria.</p>
+          </div>
+          
+          <div className="border-t pt-4">
+            <h4 className="font-semibold mb-2">⏰ Distribution</h4>
+            <p className="text-muted-foreground">Prizes will be distributed within 30 days of campaign completion. Winners will be notified via in-app notification and/or email.</p>
+          </div>
+          
+          <div className="border-t pt-4">
+            <h4 className="font-semibold mb-2">📜 Legal</h4>
+            <p className="text-muted-foreground">This is a promotional skill-based activity and does not constitute gambling or betting. Participation is subject to the Platform Terms & Conditions.</p>
+          </div>
         </CardContent>
       </Card>
     </div>

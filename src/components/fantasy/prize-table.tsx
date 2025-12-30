@@ -33,12 +33,22 @@ export function PrizeTable({ prizeDistribution, participantCount, campaignTitle 
     return `${tier.rankStart}-${tier.rankEnd}`;
   };
 
-  // Get icon for prize type
+  // Get icon for prize type (non-cash only)
   const getPrizeIcon = (type: PrizeTier['prizeType']) => {
     switch (type) {
       case 'voucher':
         return <Ticket className="w-4 h-4" />;
-      case 'cash':
+      case 'merchandise':
+        return <Gift className="w-4 h-4" />;
+      case 'tickets':
+        return <Ticket className="w-4 h-4" />;
+      case 'ott_subscription':
+        return <Award className="w-4 h-4" />;
+      case 'experience':
+        return <Award className="w-4 h-4" />;
+      case 'travel':
+        return <Award className="w-4 h-4" />;
+      case 'certificate':
         return <Award className="w-4 h-4" />;
       case 'coupons':
         return <Gift className="w-4 h-4" />;
@@ -63,7 +73,7 @@ export function PrizeTable({ prizeDistribution, participantCount, campaignTitle 
           <div>
             <CardTitle className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-primary" />
-              Prize Distribution
+              Sponsored Rewards Distribution
             </CardTitle>
             {campaignTitle && (
               <CardDescription className="mt-1">{campaignTitle}</CardDescription>
@@ -71,7 +81,7 @@ export function PrizeTable({ prizeDistribution, participantCount, campaignTitle 
           </div>
           {totalPrizePool && (
             <Badge variant="secondary" className="text-lg px-3 py-1">
-              Total: {formatCurrency(totalPrizePool)}
+              Sponsored Rewards Pool: {formatCurrency(totalPrizePool)}
             </Badge>
           )}
         </div>
@@ -102,8 +112,8 @@ export function PrizeTable({ prizeDistribution, participantCount, campaignTitle 
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4 font-semibold">Rank</th>
-                    <th className="text-left py-3 px-4 font-semibold">Prize</th>
-                    <th className="text-left py-3 px-4 font-semibold">Type</th>
+                    <th className="text-left py-3 px-4 font-semibold">Reward Value</th>
+                    <th className="text-left py-3 px-4 font-semibold">Reward Type</th>
                     {notes && <th className="text-left py-3 px-4 font-semibold">Notes</th>}
                   </tr>
                 </thead>

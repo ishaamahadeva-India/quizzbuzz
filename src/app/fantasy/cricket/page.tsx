@@ -137,7 +137,7 @@ function SeriesTab() {
 
                                 {tournament.prizePool && (
                                     <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-                                        <p className="text-xs text-muted-foreground mb-1">Prize Pool</p>
+                                        <p className="text-xs text-muted-foreground mb-1">Sponsored Rewards Pool</p>
                                         <p className="text-lg font-bold text-primary">{tournament.prizePool}</p>
                                     </div>
                                 )}
@@ -206,7 +206,7 @@ function MatchList({ matches, isLoading }: { matches: FantasyMatchWithId[] | nul
               <CardContent className="flex-grow">
                 <div className="flex items-center gap-2 text-primary">
                     <Ticket className="w-5 h-5"/>
-                    <span className="font-semibold">Prize Pool Active</span>
+                    <span className="font-semibold">Sponsored Rewards Active</span>
                 </div>
               </CardContent>
               <CardFooter>

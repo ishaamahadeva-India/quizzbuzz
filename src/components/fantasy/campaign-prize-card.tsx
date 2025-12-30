@@ -46,7 +46,7 @@ export function CampaignPrizeCard({ campaign }: CampaignPrizeCardProps) {
             )}
             {campaign.prizeDistribution?.totalPrizePool && (
               <Badge variant="secondary" className="mt-2 text-base px-3 py-1">
-                Total Prize Pool: ₹{campaign.prizeDistribution.totalPrizePool.toLocaleString('en-IN')}
+                Sponsored Rewards Pool: ₹{campaign.prizeDistribution.totalPrizePool.toLocaleString('en-IN')}
               </Badge>
             )}
           </div>
