@@ -175,10 +175,6 @@ export default function RewardsPage() {
   const userPoints = (userProfile as UserProfile)?.points || 0;
   const loginStreak = (userProfile as UserProfile)?.dailyLoginStreak || 0;
 
-  const today = new Date().toISOString().split('T')[0];
-  const canClaimLogin = lastLoginDate !== today;
-  const canClaimGame = lastGameDate !== today;
-
   return (
     <div className="container mx-auto px-4 py-8 space-y-8">
       <div>
