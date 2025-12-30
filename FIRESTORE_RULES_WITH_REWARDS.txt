@@ -43,17 +43,15 @@ service cloud.firestore {
       }
     }
     
-    // Reward Milestones - authenticated users can read active milestones, admin can read/write all
+    // Reward Milestones - authenticated users can read all (filtered by active in queries), admin can read/write all
     match /reward-milestones/{milestoneId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.active == true || isAdmin());
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
     
-    // Vouchers - authenticated users can read active vouchers, admin can read/write all
+    // Vouchers - authenticated users can read all (filtered by active in queries), admin can read/write all
     match /vouchers/{voucherId} {
-      allow read: if isAuthenticated() && 
-                    (resource.data.active == true || isAdmin());
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
     
@@ -333,4 +331,3 @@ service cloud.firestore {
     }
   }
 }
-
