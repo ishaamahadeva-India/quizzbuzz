@@ -805,8 +805,8 @@ export default function CricketMatchPage() {
     const matchAdKey = `ad-viewed-match-${id}-${user.uid}`;
     const hasViewedMatchAd = localStorage.getItem(matchAdKey);
     
-    if (!hasViewedMatchAd && typeof window !== 'undefined' && window.innerWidth < 768) {
-      // Show ad on mobile devices
+    if (!hasViewedMatchAd) {
+      // Show ad on all devices (not just mobile)
       setShowAdGate(true);
     }
   }, [match, id, adViewed, user]);

@@ -58,7 +58,12 @@ export function ImageAdGate({
       return;
     }
     
-    // Prevent multiple runs for the same targetId
+    // Reset hasRunRef if targetId changed (allows ads on different pages)
+    if (hasRunRef.current && hasRunRef.current !== targetId) {
+      hasRunRef.current = null;
+    }
+    
+    // Prevent multiple runs for the same targetId in same session
     if (hasRunRef.current === targetId) {
       return;
     }
@@ -150,7 +155,22 @@ export function ImageAdGate({
         if (cancelled) return;
 
         if (eligibleAds.length === 0) {
-          // No eligible ads, allow entry
+          // No eligible ads after filtering
+          // If we have selectedAds but they were all filtered, try showing them anyway
+          // (user might have viewed them before, but we still want to show ads)
+          if (selectedAds.length > 0) {
+            console.log('All ads filtered out, showing ads anyway for better UX');
+            // Show ads anyway, but limit to 1-2 ads if user has viewed before
+            const adsToShowAnyway = selectedAds.slice(0, 2);
+            if (!cancelled) {
+              setAds(adsToShowAnyway);
+              setCurrentAdIndex(0);
+              setIsLoading(false);
+              return;
+            }
+          }
+          
+          // If no ads at all, allow entry
           setHasViewed(true);
           setIsLoading(false);
           setTimeout(() => {
@@ -188,8 +208,10 @@ export function ImageAdGate({
     // Cleanup function
     return () => {
       cancelled = true;
+      // Reset hasRunRef on unmount to allow ads on next mount
+      // (but keep it for same targetId to prevent duplicate runs)
     };
-  }, [firestore, user?.uid, tournamentId, campaignId, required]);
+  }, [firestore, user?.uid, tournamentId, campaignId, required, hasViewed]);
 
   const handleAdComplete = async (advertisementId: string) => {
     if (!firestore || !user?.uid || ads.length === 0) {

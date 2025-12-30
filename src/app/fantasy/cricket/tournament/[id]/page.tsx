@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, notFound, useRouter } from 'next/navigation';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useDoc, useFirestore, useUser, useCollection } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -69,6 +69,7 @@ export default function TournamentPage() {
   const [selectedTier, setSelectedTier] = useState<string>('');
   const [isJoining, setIsJoining] = useState(false);
   const [showAdGate, setShowAdGate] = useState(false);
+  const hasCheckedAdRef = useRef<string | null>(null);
 
   // Check if user has already joined
   useEffect(() => {
@@ -120,6 +121,23 @@ export default function TournamentPage() {
   const isUpcoming = tournament.status === 'upcoming';
   const isCompleted = tournament.status === 'completed';
 
+  // Show ads on page load (similar to campaign page)
+  useEffect(() => {
+    if (!user?.uid || !tournamentId || !tournament) return;
+    
+    // Show ad gate when page loads (not just on join click)
+    // This ensures users see ads even if they don't click join immediately
+    const checkKey = `tournament-ad-check-${tournamentId}-${user.uid}`;
+    if (hasCheckedAdRef.current === checkKey) return;
+    
+    hasCheckedAdRef.current = checkKey;
+    
+    // Small delay to ensure page is fully loaded
+    setTimeout(() => {
+      setShowAdGate(true);
+    }, 500);
+  }, [user?.uid, tournamentId, tournament]);
+
   const handleJoinTournament = async () => {
     if (!firestore || !user) {
       toast({
@@ -137,20 +155,7 @@ export default function TournamentPage() {
     // If ad_watch, ad is required; otherwise, it's optional
     const isAdRequired = entryMethod === 'ad_watch';
     
-    // Check if user has already viewed an ad for this tournament
-    const hasViewedAd = localStorage.getItem(`ad-viewed-${tournamentId}-${user.uid}`);
-    
-    if (!hasViewedAd) {
-      setShowAdGate(true);
-      setJoinDialogOpen(false);
-      return;
-    }
-
-    // If ad_watch and no ad viewed, don't proceed
-    if (entryMethod === 'ad_watch' && !hasViewedAd) {
-      return;
-    }
-
+    // Check if paid entry requires tier selection
     if (tournament.entryFee?.type === 'paid' && !selectedTier) {
       toast({
         variant: 'destructive',
