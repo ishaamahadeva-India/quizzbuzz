@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Trophy, Calendar, MapPin, Users, DollarSign, Play, Clock, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Trophy, Calendar, MapPin, Users, DollarSign, Play, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { SocialShare } from '@/components/social-share';
 import type { CricketTournament, TournamentEvent, UserProfile } from '@/lib/types';
@@ -414,7 +414,7 @@ export default function TournamentPage() {
             <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                  <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                   <div className="space-y-2 text-sm">
                     <p className="font-semibold text-blue-900 dark:text-blue-100">
                       Free Contest - No Entry Fee Required
