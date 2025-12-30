@@ -93,44 +93,106 @@ export default function AllPrizesPage() {
         </div>
       )}
 
-      {/* Compliance Disclosure Card */}
+      {/* Mandatory Compliance Disclosures */}
       <Card className="bg-primary/5 border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Info className="w-5 h-5 text-primary" />
-            Prize & Participation Disclosure
+            Prize & Participation Disclosures
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
+        <CardContent className="space-y-6 text-sm">
+          {/* 1. Free Participation Disclosure */}
           <div className="space-y-2">
-            <p className="font-semibold text-base">This is a FREE skill-based contest.</p>
-            <ul className="list-disc list-inside space-y-1 ml-2 text-muted-foreground">
-              <li>No entry fee or payment is required to participate.</li>
-              <li>All prizes are non-cash promotional rewards.</li>
-              <li>Prizes are fully funded by sponsors and partners.</li>
-              <li>Participation or ranking does not involve any monetary risk.</li>
+            <h4 className="font-semibold text-base">1. Free Participation</h4>
+            <p className="text-muted-foreground">
+              This is a FREE skill-based contest. No entry fee or payment is required to participate.
+            </p>
+          </div>
+
+          {/* 2. Non-Cash Prize Disclosure */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">2. Non-Cash Rewards</h4>
+            <p className="text-muted-foreground">
+              All prizes are non-cash promotional rewards. Prizes are not redeemable for cash, wallet balance, or bank transfer.
+            </p>
+          </div>
+
+          {/* 3. Sponsor-Funded Rewards Disclosure */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">3. Sponsor-Funded Rewards</h4>
+            <p className="text-muted-foreground">
+              All prizes are fully funded by sponsors and partners. No user payments are used to fund rewards.
+            </p>
+          </div>
+
+          {/* 4. Skill-Based Outcome Disclosure */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">4. Skill-Based Outcome</h4>
+            <p className="text-muted-foreground">
+              Winners are determined based on skill, knowledge, and performance. No element of chance or luck determines the outcome.
+            </p>
+          </div>
+
+          {/* 5. No Gambling / Betting Disclaimer */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">5. No Gambling or Betting</h4>
+            <p className="text-muted-foreground">
+              This platform does not offer gambling, betting, or wagering of any kind.
+            </p>
+          </div>
+
+          {/* 6. Eligibility */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">6. Eligibility</h4>
+            <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+              <li>Open to residents of India</li>
+              <li>Participants must be 18 years or older</li>
+              <li>Employees of sponsors and their immediate family members are not eligible</li>
             </ul>
-            <p className="mt-2 text-muted-foreground">Winners are determined based solely on skill, knowledge, and performance.</p>
           </div>
-          
-          <div className="border-t pt-4">
-            <h4 className="font-semibold mb-2">🎯 Prize Nature</h4>
-            <p className="text-muted-foreground">Prizes are non-transferable, non-exchangeable, and not redeemable for cash. Prizes may include merchandise, experiences, tickets, subscriptions, or other sponsor-provided rewards.</p>
+
+          {/* 7. Prize Nature & Limitations */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">7. Prize Nature & Limitations</h4>
+            <p className="text-muted-foreground">
+              Prizes are non-transferable, non-exchangeable, and subject to availability. The platform reserves the right to substitute a prize of equal or greater value.
+            </p>
           </div>
-          
-          <div className="border-t pt-4">
-            <h4 className="font-semibold mb-2">📍 Eligibility</h4>
-            <p className="text-muted-foreground">Open to residents of India aged 18 years and above. Certain rewards may be subject to sponsor-specific eligibility criteria.</p>
+
+          {/* 8. Prize Distribution Timeline */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">8. Prize Distribution Timeline</h4>
+            <p className="text-muted-foreground">
+              Prizes will be distributed within 30 days of contest completion. Winners will be notified via in-app notification and/or email.
+            </p>
           </div>
-          
-          <div className="border-t pt-4">
-            <h4 className="font-semibold mb-2">⏰ Distribution</h4>
-            <p className="text-muted-foreground">Prizes will be distributed within 30 days of campaign completion. Winners will be notified via in-app notification and/or email.</p>
+
+          {/* 9. Tax Disclaimer */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">9. Tax Disclaimer</h4>
+            <p className="text-muted-foreground">
+              Any personal tax liability arising from receiving a prize, if applicable, is the sole responsibility of the winner.
+            </p>
           </div>
-          
-          <div className="border-t pt-4">
-            <h4 className="font-semibold mb-2">📜 Legal</h4>
-            <p className="text-muted-foreground">This is a promotional skill-based activity and does not constitute gambling or betting. Participation is subject to the Platform Terms & Conditions.</p>
+
+          {/* 10. Fair Play & Disqualification */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">10. Fair Play & Disqualification</h4>
+            <p className="text-muted-foreground">
+              The platform reserves the right to disqualify participants for fraud, misuse, or violation of rules. All decisions of the platform shall be final and binding.
+            </p>
+          </div>
+
+          {/* 11. Terms & Conditions Reference */}
+          <div className="border-t pt-4 space-y-2">
+            <h4 className="font-semibold">11. Terms & Conditions</h4>
+            <p className="text-muted-foreground">
+              Participation in any contest implies acceptance of the{' '}
+              <Link href="/terms" className="text-primary hover:underline font-medium">
+                Platform Terms & Conditions
+              </Link>.
+            </p>
           </div>
         </CardContent>
       </Card>

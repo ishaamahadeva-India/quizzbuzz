@@ -8,7 +8,6 @@ import {
   Users,
   Play,
   User,
-  Crown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -18,7 +17,6 @@ const mobileNavItems = [
   { href: '/fantasy', label: 'Fantasy', icon: Trophy },
   { href: '/fan-zone', label: 'Fan Zone', icon: Users },
   { href: '/profile', label: 'Profile', icon: User },
-  { href: '/subscription', label: 'Premium', icon: Crown },
 ];
 
 export function MobileFooterNav() {

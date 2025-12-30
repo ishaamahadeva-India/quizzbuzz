@@ -30,7 +30,6 @@ import {
   Phone,
   UserCircle,
   AtSign,
-  Crown,
   Calendar,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -44,31 +43,6 @@ import Link from 'next/link';
 import { updateUserProfile, isUsernameAvailable } from '@/firebase/firestore/user-profile';
 import { format } from 'date-fns';
 
-const tiers = [
-  {
-    name: 'Premium Pass',
-    price: 'Monthly',
-    features: [
-      'Full access to all game modes',
-      'Detailed explanations & insights',
-      'Audio and Video challenges',
-    ],
-    cta: 'Manage Subscription',
-    current: false,
-  },
-  {
-    name: 'Pro Pass',
-    price: 'Annual',
-    features: [
-      'All Premium features',
-      'Ad-free forever',
-      'Priority access to new modes',
-      'Exclusive monthly challenges',
-    ],
-    cta: 'Upgrade to Pro',
-    current: true,
-  },
-];
 
 const badges = [
     { name: 'Cricket Novice', icon: ShieldCheck, earned: true },
@@ -240,24 +214,6 @@ function ProfileHeader({ user, isLoading, userProfile }: { user: any, isLoading:
               </h1>
               <p className="mt-1 text-muted-foreground">{user?.email || 'user@example.com'}</p>
               <div className="mt-2 flex items-center gap-2 flex-wrap">
-                {userProfile?.isSubscribed && userProfile?.subscriptionStatus === 'active' && userProfile?.subscriptionEndDate ? (
-                  (() => {
-                    const endDate = userProfile.subscriptionEndDate instanceof Date 
-                      ? userProfile.subscriptionEndDate 
-                      : new Date((userProfile.subscriptionEndDate as any)?.seconds * 1000 || userProfile.subscriptionEndDate);
-                    const isActive = new Date() < endDate;
-                    return isActive ? (
-                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-primary/20 text-primary flex items-center gap-1">
-                        <Crown className="w-3 h-3" />
-                        Premium Member
-                      </span>
-                    ) : null;
-                  })()
-                ) : (
-                  <span className="px-3 py-1 text-xs font-medium rounded-full bg-muted text-muted-foreground">
-                    Free Member
-                  </span>
-                )}
                 {userProfile && (userProfile.city || userProfile.state) && (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="w-3 h-3" />
@@ -440,83 +396,6 @@ function ProfileHeader({ user, isLoading, userProfile }: { user: any, isLoading:
             </Card>
           )}
 
-          {/* Subscription Status Card */}
-          {userProfile && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Crown className="h-5 w-5" />
-                    Subscription
-                  </CardTitle>
-                  {(!userProfile.isSubscribed || userProfile.subscriptionStatus !== 'active') && (
-                    <Button size="sm" asChild>
-                      <Link href="/subscription">
-                        Subscribe Now
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-                <CardDescription>
-                  Manage your subscription and premium features
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {userProfile.isSubscribed && userProfile.subscriptionStatus === 'active' && userProfile.subscriptionEndDate ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Status:</span>
-                      <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-500/20 text-green-600 dark:text-green-400">
-                        Active
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Plan:</span>
-                      <span className="font-semibold">Annual Subscription</span>
-                    </div>
-                    {userProfile.subscriptionStartDate && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Started:</span>
-                        <span className="font-semibold flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {format(
-                            userProfile.subscriptionStartDate instanceof Date
-                              ? userProfile.subscriptionStartDate
-                              : new Date((userProfile.subscriptionStartDate as any)?.seconds * 1000 || userProfile.subscriptionStartDate),
-                            'PPP'
-                          )}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Expires:</span>
-                      <span className="font-semibold flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {format(
-                          userProfile.subscriptionEndDate instanceof Date
-                            ? userProfile.subscriptionEndDate
-                            : new Date((userProfile.subscriptionEndDate as any)?.seconds * 1000 || userProfile.subscriptionEndDate),
-                          'PPP'
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-muted-foreground mb-4">
-                      You don't have an active subscription
-                    </p>
-                    <Button asChild>
-                      <Link href="/subscription">
-                        <Crown className="mr-2 h-4 w-4" />
-                        Subscribe Now - ₹99/year
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
     )
 }
@@ -601,47 +480,6 @@ export default function ProfilePage() {
         </TabsContent>
       </Tabs>
 
-      <div>
-        <h2 className="mb-4 text-2xl font-bold font-headline">
-          Subscription
-        </h2>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {tiers.map((tier) => (
-            <Card
-              key={tier.name}
-              className={`flex flex-col ${
-                tier.current && user
-                  ? 'border-primary ring-2 ring-primary shadow-primary/20'
-                  : ''
-              }`}
-            >
-              <CardHeader>
-                <CardTitle className="font-headline">{tier.name}</CardTitle>
-                <CardDescription>{tier.price}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                <ul className="space-y-2">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start">
-                      <Check className="w-4 h-4 mr-2 text-green-400 shrink-0 mt-1" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  className="w-full"
-                  variant={tier.current && user ? 'outline' : 'default'}
-                  disabled={!user}
-                >
-                  {tier.cta}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

@@ -410,21 +410,49 @@ export default function TournamentPage() {
               />
             )}
 
-            {/* Compliance Disclaimer */}
+            {/* Mandatory Compliance Disclosures */}
             <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div className="space-y-2 text-sm">
-                    <p className="font-semibold text-blue-900 dark:text-blue-100">
-                      Free Contest - No Entry Fee Required
-                    </p>
-                    <p className="text-blue-800 dark:text-blue-200">
-                      This is a FREE skill-based contest. No entry fee or payment is required to participate. 
-                      All rewards are sponsor-funded, non-cash promotional rewards. 
-                      Winners are determined based solely on skill, knowledge, and performance.
-                    </p>
-                  </div>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+                  <AlertCircle className="w-5 h-5" />
+                  Contest Disclosures
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm text-blue-800 dark:text-blue-200">
+                <div>
+                  <p className="font-semibold mb-1">1. Free Participation</p>
+                  <p>This is a FREE skill-based contest. No entry fee or payment is required to participate.</p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="font-semibold mb-1">2. Non-Cash Rewards</p>
+                  <p>All prizes are non-cash promotional rewards. Prizes are not redeemable for cash, wallet balance, or bank transfer.</p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="font-semibold mb-1">3. Sponsor-Funded</p>
+                  <p>All prizes are fully funded by sponsors and partners. No user payments are used to fund rewards.</p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="font-semibold mb-1">4. Skill-Based Outcome</p>
+                  <p>Winners are determined based on skill, knowledge, and performance. No element of chance or luck determines the outcome.</p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="font-semibold mb-1">5. Eligibility</p>
+                  <p>Open to residents of India aged 18 years or older. Employees of sponsors and their immediate family members are not eligible.</p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="font-semibold mb-1">6. Prize Distribution</p>
+                  <p>Prizes will be distributed within 30 days of contest completion. Winners will be notified via in-app notification and/or email.</p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="font-semibold mb-1">7. Terms & Conditions</p>
+                  <p>Participation implies acceptance of the{' '}
+                    <Link href="/terms" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                      Platform Terms & Conditions
+                    </Link>.
+                  </p>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="text-xs italic">This platform does not offer gambling, betting, or wagering of any kind.</p>
                 </div>
               </CardContent>
             </Card>

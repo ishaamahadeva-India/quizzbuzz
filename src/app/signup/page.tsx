@@ -173,6 +173,12 @@ export default function SignupPage() {
             </form>
           </Form>
         </CardContent>
+        {/* Short Disclosure */}
+        <CardContent className="pt-0">
+          <p className="text-xs text-center text-muted-foreground px-4">
+            Free-to-play skill-based contests with sponsor-funded non-cash rewards. No entry fee. No cash prizes.
+          </p>
+        </CardContent>
         <CardFooter className="justify-center">
           <p className="text-sm text-muted-foreground">
             Already have an account?{' '}
