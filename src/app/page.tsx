@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useCollection, useFirestore, useUser, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, limit, type Query, doc, Timestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import type { Article, UserProfile, Movie, Gossip, Advertisement } from '@/lib/types';
 import { MessageSquareText } from 'lucide-react';
 import { SocialShare } from '@/components/social-share';
@@ -230,23 +230,25 @@ function SponsoredAd() {
     
     const { data: ads, isLoading, error } = useCollection(adsQuery);
     
-    // Debug logging
+    // Debug logging (client-side only, in development)
     useEffect(() => {
-        if (error) {
-            console.error('Error fetching advertisements:', error);
-        }
-        if (ads) {
-            console.log('Fetched advertisements:', ads);
-            console.log('Advertisements count:', ads.length);
-            ads.forEach((ad, idx) => {
-                console.log(`Ad ${idx + 1}:`, {
-                    id: ad.id,
-                    title: ad.title,
-                    position: ad.position,
-                    active: ad.active,
-                    createdAt: ad.createdAt
+        if (process.env.NODE_ENV === 'development') {
+            if (error) {
+                console.error('Error fetching advertisements:', error);
+            }
+            if (ads) {
+                console.log('Fetched advertisements:', ads);
+                console.log('Advertisements count:', ads.length);
+                ads.forEach((ad, idx) => {
+                    console.log(`Ad ${idx + 1}:`, {
+                        id: ad.id,
+                        title: ad.title,
+                        position: ad.position,
+                        active: ad.active,
+                        createdAt: ad.createdAt
+                    });
                 });
-            });
+            }
         }
     }, [ads, error]);
     
@@ -290,34 +292,62 @@ function SponsoredAd() {
     }
     
     if (!advertisement) {
-        console.log('No active advertisement found for home-sidebar-sponsored position');
+        if (process.env.NODE_ENV === 'development') {
+            console.log('No active advertisement found for home-sidebar-sponsored position');
+        }
         return null; // Don't show anything if no active ad
     }
     
     // Check if ad is within date range (if dates are set)
-    const now = new Date();
-    const startDate = toDate(advertisement.startDate);
-    const endDate = toDate(advertisement.endDate);
+    // Use useState and useEffect to avoid hydration mismatches
+    const [isDateValid, setIsDateValid] = useState<boolean | null>(null);
     
-    console.log('Advertisement date check:', {
-        title: advertisement.title,
-        startDate,
-        endDate,
-        now,
-        startDateValid: startDate ? now >= startDate : true,
-        endDateValid: endDate ? now <= endDate : true
-    });
+    useEffect(() => {
+        const now = new Date();
+        const startDate = toDate(advertisement.startDate);
+        const endDate = toDate(advertisement.endDate);
+        
+        // Debug logging (client-side only)
+        if (process.env.NODE_ENV === 'development') {
+            console.log('Advertisement date check:', {
+                title: advertisement.title,
+                startDate,
+                endDate,
+                now,
+                startDateValid: startDate ? now >= startDate : true,
+                endDateValid: endDate ? now <= endDate : true
+            });
+        }
+        
+        if (startDate && now < startDate) {
+            if (process.env.NODE_ENV === 'development') {
+                console.log('Advertisement filtered out: Hasn\'t started yet');
+            }
+            setIsDateValid(false);
+            return;
+        }
+        if (endDate && now > endDate) {
+            if (process.env.NODE_ENV === 'development') {
+                console.log('Advertisement filtered out: Has expired');
+            }
+            setIsDateValid(false);
+            return;
+        }
+        
+        setIsDateValid(true);
+        if (process.env.NODE_ENV === 'development') {
+            console.log('Rendering advertisement:', advertisement.title);
+        }
+    }, [advertisement]);
     
-    if (startDate && now < startDate) {
-        console.log('Advertisement filtered out: Hasn\'t started yet');
-        return null; // Ad hasn't started yet
+    // Don't render until date check is complete (prevents hydration mismatch)
+    if (isDateValid === null) {
+        return null; // Still checking dates
     }
-    if (endDate && now > endDate) {
-        console.log('Advertisement filtered out: Has expired');
-        return null; // Ad has expired
-    }
     
-    console.log('Rendering advertisement:', advertisement.title);
+    if (isDateValid === false) {
+        return null; // Ad is outside date range
+    }
     
     return (
         <Card className="bg-gradient-to-br from-accent/10">
