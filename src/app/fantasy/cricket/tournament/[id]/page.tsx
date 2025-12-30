@@ -27,6 +27,8 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { AnimatedSponsorTile } from '@/components/fantasy/animated-sponsor-tile';
+import { ContestJoinBanner } from '@/components/compliance/contest-join-banner';
+import { SponsorCampaignBanner } from '@/components/compliance/sponsor-campaign-banner';
 
 export default function TournamentPage() {
   const params = useParams();
@@ -479,6 +481,16 @@ export default function TournamentPage() {
               </div>
               {!isCompleted && (
                 <>
+                  {/* Contest Join Banner */}
+                  {!hasEntry && (
+                    <ContestJoinBanner className="mb-4" />
+                  )}
+                  
+                  {/* Sponsor Campaign Banner */}
+                  {tournament.sponsorName && (
+                    <SponsorCampaignBanner sponsorName={tournament.sponsorName} className="mb-4" />
+                  )}
+
                   {hasEntry ? (
                     <div className="flex items-center gap-2 text-green-600">
                       <CheckCircle2 className="w-5 h-5" />

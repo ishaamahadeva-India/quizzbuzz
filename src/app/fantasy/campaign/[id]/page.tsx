@@ -14,6 +14,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useEffect, useState, useRef, useCallback } from 'react';
 import type { FantasyCampaign, FantasyEvent } from '@/lib/types';
 import { ImageAdGate } from '@/components/ads/image-ad-gate';
+import { WinnerAnnouncementBanner } from '@/components/compliance/winner-announcement-banner';
+import { ContestJoinBanner } from '@/components/compliance/contest-join-banner';
+import { SponsorCampaignBanner } from '@/components/compliance/sponsor-campaign-banner';
 
 type FantasyCampaignWithId = FantasyCampaign & { id: string };
 type FantasyEventWithId = FantasyEvent & { id: string };
@@ -395,15 +398,9 @@ export default function FantasyMovieCampaignPage() {
             </div>
         </div>
 
+        {/* Sponsor Campaign Banner */}
         {campaignWithId.sponsorName && (
-            <Card className="p-4 bg-gradient-to-r from-primary/10 via-background to-background border-primary/20">
-                <div className="flex flex-col md:flex-row items-center justify-center gap-4 text-center md:text-left">
-                    <span className="text-xs font-semibold tracking-widest uppercase text-primary">Sponsored By</span>
-                    <div className="flex items-center gap-2 text-2xl font-bold text-foreground">
-                        <Building className='w-6 h-6 text-primary'/> {campaignWithId.sponsorName}
-                    </div>
-                </div>
-            </Card>
+          <SponsorCampaignBanner sponsorName={campaignWithId.sponsorName} className="mb-4" />
         )}
 
         {/* Mandatory Compliance Disclosures */}
@@ -558,6 +555,9 @@ export default function FantasyMovieCampaignPage() {
                 </div>
             </TabsContent>
             <TabsContent value="leaderboard" className="mt-6">
+                {/* Winner Announcement Banner */}
+                <WinnerAnnouncementBanner className="mb-4" />
+                
                 <Card>
                     <CardHeader>
                         <CardTitle className="font-headline">Campaign Leaderboard</CardTitle>

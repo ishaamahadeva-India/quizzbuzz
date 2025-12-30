@@ -2,8 +2,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Award, Gift, Ticket } from 'lucide-react';
+import { Trophy, Award, Gift, Ticket, Info } from 'lucide-react';
 import type { PrizeDistribution, PrizeTier } from '@/lib/types';
+import { PrizeInfoTooltip } from '@/components/compliance/contest-join-banner';
 
 interface PrizeTableProps {
   prizeDistribution: PrizeDistribution;
@@ -74,6 +75,9 @@ export function PrizeTable({ prizeDistribution, participantCount, campaignTitle 
             <CardTitle className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-primary" />
               Sponsored Rewards Distribution
+              <PrizeInfoTooltip>
+                <Info className="w-4 h-4 text-muted-foreground cursor-help ml-1" />
+              </PrizeInfoTooltip>
             </CardTitle>
             {campaignTitle && (
               <CardDescription className="mt-1">{campaignTitle}</CardDescription>

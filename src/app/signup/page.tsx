@@ -31,6 +31,8 @@ import {
 } from '@/firebase/auth/auth-service';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore } from '@/firebase';
+import { WelcomeDisclaimerDialog } from '@/components/compliance/welcome-disclaimer-dialog';
+import { useState, useEffect } from 'react';
 
 const formSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -46,6 +48,24 @@ export default function SignupPage() {
   const { toast } = useToast();
   const auth = useAuth();
   const firestore = useFirestore();
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [hasAcceptedWelcome, setHasAcceptedWelcome] = useState(false);
+
+  // Show welcome dialog on mount
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem('quizzbuzz-welcome-accepted');
+    if (!hasSeenWelcome) {
+      setShowWelcomeDialog(true);
+    } else {
+      setHasAcceptedWelcome(true);
+    }
+  }, []);
+
+  const handleWelcomeAccept = () => {
+    localStorage.setItem('quizzbuzz-welcome-accepted', 'true');
+    setShowWelcomeDialog(false);
+    setHasAcceptedWelcome(true);
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -76,8 +96,13 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-      <Card className="w-full max-w-sm">
+    <>
+      <WelcomeDisclaimerDialog
+        open={showWelcomeDialog}
+        onAccept={handleWelcomeAccept}
+      />
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
           <CardDescription>
@@ -189,5 +214,6 @@ export default function SignupPage() {
         </CardFooter>
       </Card>
     </div>
+    </>
   );
 }

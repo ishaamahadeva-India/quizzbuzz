@@ -174,6 +174,12 @@ export default function LoginPage() {
             <LogIn className="mr-2 h-4 w-4" /> Google
           </Button>
         </CardContent>
+        {/* Short Disclosure */}
+        <CardContent className="pt-0">
+          <p className="text-xs text-center text-muted-foreground px-4">
+            Free-to-play skill-based contests with sponsor-funded non-cash rewards. No entry fee. No cash prizes.
+          </p>
+        </CardContent>
         <CardFooter className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground">
             Don't have an account?{' '}
