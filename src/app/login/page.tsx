@@ -91,16 +91,13 @@ export default function LoginPage() {
   const onGoogleSignIn = async () => {
     if (!auth || !firestore) return;
     try {
+      // Redirect flow - user will be redirected to Google, then back to app
+      // The useEffect above will handle the result when they return
       await handleGoogleSignIn(auth, firestore);
-      // If popup succeeds, user will be signed in immediately
-      // If redirect is used, the useEffect above will handle it
-      // Only navigate if popup succeeded (no redirect happened)
-      if (auth.currentUser) {
-        router.push('/profile');
-      }
+      // No need to navigate here - user is being redirected
     } catch (error: any) {
-      // If redirect was triggered, don't show error (user will be redirected)
-      if (!error?.message?.includes('redirect')) {
+      // Only show error if it's not a redirect (redirect is expected behavior)
+      if (!error?.message?.includes('redirect') && error?.code !== 'auth/redirect-cancelled-by-user') {
         toast({
           variant: 'destructive',
           title: 'Sign In Failed',

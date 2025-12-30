@@ -51,22 +51,11 @@ const saveUserToFirestore = (firestore: Firestore, user: { uid: string, displayN
 export const handleGoogleSignIn = async (auth: Auth, firestore: Firestore) => {
     const provider = new GoogleAuthProvider();
     try {
-        // Try popup first, fallback to redirect if COOP blocks it
-        try {
-            const result = await signInWithPopup(auth, provider);
-            saveUserToFirestore(firestore, result.user);
-        } catch (popupError: any) {
-            // If popup is blocked (COOP error), use redirect instead
-            if (popupError?.code === 'auth/popup-blocked' || 
-                popupError?.message?.includes('Cross-Origin-Opener-Policy') ||
-                popupError?.message?.includes('window.closed')) {
-                console.log('Popup blocked, using redirect instead');
-                await signInWithRedirect(auth, provider);
-                // Note: User will be redirected, so we'll handle the result on return
-            } else {
-                throw popupError;
-            }
-        }
+        // Use redirect flow by default to avoid COOP (Cross-Origin-Opener-Policy) warnings
+        // Redirect is more reliable and doesn't trigger browser security warnings
+        await signInWithRedirect(auth, provider);
+        // Note: User will be redirected to Google, then back to the app
+        // The result will be handled by handleGoogleSignInRedirect() when they return
     } catch (error) {
         console.error("Google Sign-In Error:", error);
         throw error;
