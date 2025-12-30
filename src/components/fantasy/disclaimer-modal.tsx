@@ -18,14 +18,19 @@ import { updateUserFantasySettings } from '@/firebase/firestore/users';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
-export function DisclaimerModal() {
+interface DisclaimerModalProps {
+  onClose?: () => void;
+}
+
+export function DisclaimerModal({ onClose }: DisclaimerModalProps = {}) {
   const [ageChecked, setAgeChecked] = useState(false);
   const [termsChecked, setTermsChecked] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
     if (!user || !firestore) {
       toast({
         variant: 'destructive',
@@ -35,19 +40,38 @@ export function DisclaimerModal() {
       return;
     }
     
-    updateUserFantasySettings(firestore, user.uid, {
+    setIsSaving(true);
+    
+    try {
+      await updateUserFantasySettings(firestore, user.uid, {
         ageVerified: true,
         fantasyEnabled: true,
-    });
-    
-    toast({
+      });
+      
+      toast({
         title: 'Welcome to the Fantasy League!',
         description: 'Your settings have been saved.',
-    });
+      });
 
-    // We can't just close the modal because the parent component needs to re-render.
-    // A page refresh is the simplest way to re-check the user's profile status.
-    router.refresh();
+      // Call the onClose callback if provided
+      if (onClose) {
+        onClose();
+      } else {
+        // Fallback: refresh the page to re-fetch user profile
+        router.refresh();
+        // Also force a reload after a short delay to ensure Firestore updates are reflected
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not save settings. Please try again.',
+      });
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -101,9 +125,9 @@ export function DisclaimerModal() {
           <Button
             className="w-full"
             onClick={handleAccept}
-            disabled={!ageChecked || !termsChecked}
+            disabled={!ageChecked || !termsChecked || isSaving}
           >
-            Accept and Continue
+            {isSaving ? 'Saving...' : 'Accept and Continue'}
           </Button>
         </DialogFooter>
       </DialogContent>

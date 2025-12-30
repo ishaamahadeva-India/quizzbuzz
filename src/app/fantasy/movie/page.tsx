@@ -354,7 +354,7 @@ export default function MovieFantasyPage() {
     }
     
     if (showDisclaimer) {
-        return <DisclaimerModal />;
+        return <DisclaimerModal onClose={() => setShowDisclaimer(false)} />;
     }
 
     return <MovieFantasyContent campaigns={campaigns} isLoading={campaignsLoading} movies={movies} />;

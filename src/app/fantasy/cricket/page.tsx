@@ -356,7 +356,7 @@ export default function CricketFantasyPage() {
     }
 
     if (showDisclaimer) {
-        return <DisclaimerModal />;
+        return <DisclaimerModal onClose={() => setShowDisclaimer(false)} />;
     }
 
     return <CricketFantasyContent />;
