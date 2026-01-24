@@ -63,6 +63,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <meta name="theme-color" content="#E6C87A" />
+        <meta name="google-adsense-account" content="ca-pub-7841158611461633" />
         {/* Google AdSense */}
         <Script
           id="adsense-init"
