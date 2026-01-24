@@ -1,5 +1,6 @@
 
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
@@ -62,6 +63,14 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <meta name="theme-color" content="#E6C87A" />
+        {/* Google AdSense */}
+        <Script
+          id="adsense-init"
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7841158611461633"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
       </head>
       <body className="font-sans antialiased min-h-screen">
         <ErrorBoundary>
