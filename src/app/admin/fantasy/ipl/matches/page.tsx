@@ -28,11 +28,12 @@ import {
   addIPLMatch,
   deleteIPLMatch,
   getIPLMatchesDescending,
+  insertGeneratedIPLSchedule,
   updateIPLMatch,
   updateIPLMatchStatus,
 } from '@/firebase/firestore/ipl-matches';
 import type { IPLMatchStatus } from '@/lib/types';
-import { ArrowLeft, Play, Square, Pencil, Trash2, Table2 } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, Play, Square, Pencil, Trash2, Table2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,6 +59,7 @@ export default function AdminIPLMatchesPage() {
   const [formStatus, setFormStatus] = useState<IPLMatchStatus>('upcoming');
   const [formWinner, setFormWinner] = useState('');
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const load = async () => {
     if (!firestore) return;
@@ -173,6 +175,47 @@ export default function AdminIPLMatchesPage() {
     }
   };
 
+  const generateFullSchedule = async () => {
+    if (!firestore) return;
+    setGenerating(true);
+    try {
+      const {
+        inserted,
+        skipped,
+        errors,
+        cricketInserted,
+        cricketSkipped,
+        cricketErrors,
+      } = await insertGeneratedIPLSchedule(firestore, { startDate: '2026-03-22' });
+      const hasErrors = errors.length > 0 || cricketErrors.length > 0;
+      const parts = [
+        `IPL (pick'em): ${inserted} added, ${skipped} skipped`,
+        `Cricket (T20/IPL): ${cricketInserted} added, ${cricketSkipped} skipped`,
+      ];
+      if (hasErrors) {
+        toast({
+          variant: 'destructive',
+          title: 'Schedule generated with some errors',
+          description: parts.join('. ') + (errors.length + cricketErrors.length ? ` ${errors.length + cricketErrors.length} error(s).` : ''),
+        });
+      } else {
+        toast({
+          title: 'Schedule generated',
+          description: parts.join('. ') + '. Users can join unified IPL fantasy or individual cricket matches.',
+        });
+      }
+      await load();
+    } catch (e) {
+      toast({
+        variant: 'destructive',
+        title: 'Generate failed',
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -201,6 +244,23 @@ export default function AdminIPLMatchesPage() {
           <Button onClick={openCreate}>Create match</Button>
         </div>
       </div>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarPlus className="w-5 h-5" />
+            Generate full IPL schedule
+          </CardTitle>
+          <CardDescription>
+            10 teams, double round-robin (~90 league) + 4 playoffs. Start 2026-03-22. Creates matches in both IPL Fantasy (pick&apos;em) and Cricket Fantasy (T20/IPL) so users can join unified IPL or individual matches. Duplicates skipped.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={generateFullSchedule} disabled={!firestore || generating}>
+            {generating ? 'Generating…' : 'Generate Full IPL Schedule'}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

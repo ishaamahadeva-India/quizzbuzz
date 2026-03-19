@@ -6,6 +6,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  getDocs,
   serverTimestamp,
   type Firestore,
 } from 'firebase/firestore';
@@ -13,7 +14,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import type { FantasyMatch, CricketEvent, CricketEventType } from '@/lib/types';
 
-type NewFantasyMatch = {
+export type NewFantasyMatch = {
   matchName: string;
   format: "T20" | "ODI" | "Test" | "IPL";
   teams: string[];
@@ -28,6 +29,8 @@ type NewFantasyMatch = {
     amount?: number;
   };
   maxParticipants?: number;
+  /** When creating from IPL schedule, same key as ipl_matches for dedup. */
+  iplMatchKey?: string;
 };
 
 type NewCricketEvent = {
@@ -78,6 +81,9 @@ export function addCricketMatch(firestore: Firestore, matchData: NewFantasyMatch
   if (matchData.maxParticipants !== undefined) {
     docToSave.maxParticipants = matchData.maxParticipants;
   }
+  if (matchData.iplMatchKey !== undefined) {
+    docToSave.iplMatchKey = matchData.iplMatchKey;
+  }
 
   return addDoc(matchesCollection, docToSave)
     .catch(async (serverError) => {
@@ -89,6 +95,18 @@ export function addCricketMatch(firestore: Firestore, matchData: NewFantasyMatch
       errorEmitter.emit('permission-error', permissionError);
       throw serverError;
     });
+}
+
+/** Get all iplMatchKey values in fantasy_matches (for duplicate prevention when syncing from IPL schedule). */
+export async function getExistingCricketMatchIPLKeys(firestore: Firestore): Promise<Set<string>> {
+  const col = collection(firestore, 'fantasy_matches');
+  const snapshot = await getDocs(col);
+  const keys = new Set<string>();
+  snapshot.docs.forEach((d) => {
+    const key = d.data().iplMatchKey as string | undefined;
+    if (key) keys.add(key);
+  });
+  return keys;
 }
 
 /**

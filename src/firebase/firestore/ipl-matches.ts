@@ -76,10 +76,16 @@ export async function getIPLMatch(
 
 export async function addIPLMatch(
   firestore: Firestore,
-  data: { teamA: string; teamB: string; matchStartTime: Date; status?: IPLMatchStatus }
+  data: {
+    teamA: string;
+    teamB: string;
+    matchStartTime: Date;
+    status?: IPLMatchStatus;
+    matchKey?: string;
+  }
 ): Promise<string> {
   const col = collection(firestore, COLLECTION);
-  const docToSave = {
+  const docToSave: Record<string, unknown> = {
     teamA: data.teamA,
     teamB: data.teamB,
     matchStartTime: data.matchStartTime instanceof Date
@@ -87,6 +93,7 @@ export async function addIPLMatch(
       : data.matchStartTime,
     status: data.status ?? 'upcoming',
   };
+  if (data.matchKey != null) docToSave.matchKey = data.matchKey;
   const ref = await addDoc(col, docToSave).catch((serverError) => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
       path: col.path,
@@ -171,4 +178,103 @@ export async function getIPLMatchesDescending(
   const q = query(col, orderBy('matchStartTime', 'desc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => toMatch({ id: d.id, data: () => d.data() as Record<string, unknown> }));
+}
+
+/** Get all matchKeys present in ipl_matches (for duplicate prevention). */
+export async function getExistingIPLMatchKeys(firestore: Firestore): Promise<Set<string>> {
+  const col = collection(firestore, COLLECTION);
+  const snapshot = await getDocs(col);
+  const keys = new Set<string>();
+  snapshot.docs.forEach((d) => {
+    const key = d.data().matchKey as string | undefined;
+    if (key) keys.add(key);
+  });
+  return keys;
+}
+
+export type InsertGeneratedScheduleResult = {
+  inserted: number;
+  skipped: number;
+  errors: string[];
+  cricketInserted: number;
+  cricketSkipped: number;
+  cricketErrors: string[];
+};
+
+/**
+ * Generate full IPL schedule: insert into ipl_matches and create corresponding cricket matches
+ * in fantasy_matches (T20/IPL) so users can join either unified IPL fantasy or individual match fantasy.
+ * Skips duplicates by matchKey (ipl_matches) and iplMatchKey (fantasy_matches).
+ */
+export async function insertGeneratedIPLSchedule(
+  firestore: Firestore,
+  options?: { startDate?: string }
+): Promise<InsertGeneratedScheduleResult> {
+  const { addCricketMatch, getExistingCricketMatchIPLKeys } = await import('./cricket-matches');
+  const { generateIPLSchedule } = await import('@/lib/ipl-schedule-generator');
+  const [existing, cricketExisting] = await Promise.all([
+    getExistingIPLMatchKeys(firestore),
+    getExistingCricketMatchIPLKeys(firestore),
+  ]);
+  const matches = generateIPLSchedule({
+    startDate: options?.startDate ?? '2026-03-22',
+    includePlayoffs: true,
+  });
+  let inserted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+  let cricketInserted = 0;
+  let cricketSkipped = 0;
+  const cricketErrors: string[] = [];
+
+  for (const m of matches) {
+    if (existing.has(m.matchKey)) {
+      skipped++;
+    } else {
+      try {
+        await addIPLMatch(firestore, {
+          teamA: m.teamA,
+          teamB: m.teamB,
+          matchStartTime: m.matchStartTime,
+          status: m.status,
+          matchKey: m.matchKey,
+        });
+        inserted++;
+        existing.add(m.matchKey);
+      } catch (e) {
+        errors.push(`${m.teamA} vs ${m.teamB} @ ${m.matchStartTime.toISOString()}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+
+    if (cricketExisting.has(m.matchKey)) {
+      cricketSkipped++;
+    } else {
+      try {
+        await addCricketMatch(firestore, {
+          matchName: `${m.teamA} vs ${m.teamB}`,
+          format: 'IPL',
+          teams: [m.teamA, m.teamB],
+          team1: m.teamA,
+          team2: m.teamB,
+          startTime: m.matchStartTime,
+          status: 'upcoming',
+          entryFee: { type: 'free' },
+          iplMatchKey: m.matchKey,
+        });
+        cricketInserted++;
+        cricketExisting.add(m.matchKey);
+      } catch (e) {
+        cricketErrors.push(`${m.teamA} vs ${m.teamB}: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  }
+
+  return {
+    inserted,
+    skipped,
+    errors,
+    cricketInserted,
+    cricketSkipped,
+    cricketErrors,
+  };
 }
