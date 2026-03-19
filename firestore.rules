@@ -5,10 +5,15 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
-    // Helper: admin (only admin@fantasy.com)
+    // Helper: super-admin email OR users/{uid}.isAdmin == true (for IPL / ops admins)
     function isAdmin() {
-      return isAuthenticated() &&
-             request.auth.token.email == 'admin@fantasy.com';
+      return isAuthenticated() && (
+        request.auth.token.email == 'admin@fantasy.com' ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true
+        )
+      );
     }
 
     match /users/{userId} {

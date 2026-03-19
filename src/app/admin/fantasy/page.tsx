@@ -226,7 +226,7 @@ export default function AdminFantasyPage() {
               Fantasy Game Management
             </h1>
           </div>
-          <p className="text-muted-foreground ml-12">
+          <p className="text-muted-foreground ml-12 mb-4">
             Manage Movie Fantasy Leagues and Live Cricket Matches.
           </p>
         </div>
@@ -245,6 +245,23 @@ export default function AdminFantasyPage() {
           </Button>
         </div>
       </div>
+
+      <Card className="border-primary/25 bg-primary/5 shadow-sm">
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Trophy className="w-5 h-5 text-primary" />
+              IPL Fantasy (pick&apos;em)
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Admin: matches, players, per-match stats, selection %, scoring, leaderboard &amp; tools.
+            </CardDescription>
+          </div>
+          <Button asChild>
+            <Link href="/admin/fantasy/ipl">Open IPL admin</Link>
+          </Button>
+        </CardHeader>
+      </Card>
 
       <Card className="border-2 shadow-sm hover:shadow-md transition-shadow">
         <CardHeader className="bg-gradient-to-r from-primary/5 to-transparent border-b">

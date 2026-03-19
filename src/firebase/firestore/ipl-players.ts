@@ -39,6 +39,16 @@ export async function getIPLPlayers(firestore: Firestore): Promise<(IPLPlayer & 
   return snapshot.docs.map((d) => docToPlayer({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }
 
+/** Admin: all players including inactive (single-field orderBy). */
+export async function getAllIPLPlayersForAdmin(
+  firestore: Firestore
+): Promise<(IPLPlayer & { id: string })[]> {
+  const col = collection(firestore, COLLECTION);
+  const q = query(col, orderBy('name'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => docToPlayer({ id: d.id, data: () => d.data() as Record<string, unknown> }));
+}
+
 export async function getIPLPlayersByTeam(
   firestore: Firestore,
   team: string

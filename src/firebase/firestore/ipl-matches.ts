@@ -4,6 +4,7 @@ import {
   collection,
   addDoc,
   updateDoc,
+  deleteDoc,
   doc,
   getDocs,
   getDoc,
@@ -111,4 +112,63 @@ export async function updateIPLMatchStatus(
     }));
     throw serverError;
   });
+}
+
+export async function updateIPLMatch(
+  firestore: Firestore,
+  matchId: string,
+  data: {
+    teamA?: string;
+    teamB?: string;
+    matchStartTime?: Date;
+    status?: IPLMatchStatus;
+    winnerTeamId?: string | null;
+  }
+): Promise<void> {
+  const ref = doc(firestore, COLLECTION, matchId);
+  const updateData: Record<string, unknown> = {};
+  if (data.teamA !== undefined) updateData.teamA = data.teamA;
+  if (data.teamB !== undefined) updateData.teamB = data.teamB;
+  if (data.matchStartTime !== undefined) {
+    updateData.matchStartTime = Timestamp.fromDate(data.matchStartTime);
+  }
+  if (data.status !== undefined) updateData.status = data.status;
+  if (data.winnerTeamId !== undefined) {
+    if (data.winnerTeamId === null) {
+      const { deleteField } = await import('firebase/firestore');
+      updateData.winnerTeamId = deleteField();
+    } else {
+      updateData.winnerTeamId = data.winnerTeamId;
+    }
+  }
+  await updateDoc(ref, updateData as never).catch((serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'update',
+      requestResourceData: updateData,
+    }));
+    throw serverError;
+  });
+}
+
+export async function deleteIPLMatch(firestore: Firestore, matchId: string): Promise<void> {
+  const ref = doc(firestore, COLLECTION, matchId);
+  await deleteDoc(ref).catch((serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'delete',
+      requestResourceData: {},
+    }));
+    throw serverError;
+  });
+}
+
+/** Latest matches first (admin list). */
+export async function getIPLMatchesDescending(
+  firestore: Firestore
+): Promise<(IPLMatch & { id: string })[]> {
+  const col = collection(firestore, COLLECTION);
+  const q = query(col, orderBy('matchStartTime', 'desc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => toMatch({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }

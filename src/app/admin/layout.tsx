@@ -14,6 +14,7 @@ import {
   BarChart3,
   Calculator,
   Coins,
+  Trophy,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -26,6 +27,8 @@ import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
+const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || 'admin@fantasy.com';
+
 const adminNavItems = [
   { href: '/admin', label: 'Dashboard', icon: Home },
   { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
@@ -37,6 +40,7 @@ const adminNavItems = [
   { href: '/admin/ads', label: 'Advertisements', icon: BadgePercent },
   { href: '/admin/image-ads', label: 'Image Ads', icon: ImageIcon },
   { href: '/admin/fantasy', label: 'Fantasy Games', icon: Gamepad2 },
+  { href: '/admin/fantasy/ipl', label: 'IPL Fantasy', icon: Trophy },
   { href: '/admin/fanzone', label: 'Fan Zone', icon: Shield },
   { href: '/admin/coupons', label: 'Coupons', icon: Ticket },
 ];
@@ -65,7 +69,12 @@ function AdminSidebar() {
         </div>
         <div className="flex-1 space-y-1">
           {adminNavItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            const isActive =
+              item.href === '/admin/fantasy'
+                ? pathname === '/admin/fantasy' ||
+                  (pathname.startsWith('/admin/fantasy/') &&
+                    !pathname.startsWith('/admin/fantasy/ipl'))
+                : pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.label}
@@ -106,36 +115,32 @@ function AdminSidebar() {
   );
 }
 
-const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || 'admin@fantasy.com';
-
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isLoading: userLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  
-  // Check superadmin ONLY (from Firebase Auth, available immediately on refresh)
+
   const isSuperAdmin = user?.email === SUPER_ADMIN_EMAIL;
-  
-  // Only wait for user loading
-  const isLoading = userLoading;
-  
-  // ONLY super admin is authorized - no other users can access admin panel
-  const isAuthorized = isSuperAdmin;
+  const userProfileRef =
+    firestore && user && !isSuperAdmin ? doc(firestore, 'users', user.uid) : null;
+  const { data: profileData, isLoading: profileLoading } = useDoc(userProfileRef);
+  const profile = profileData as UserProfile | null | undefined;
+  const isAdminFlag = profile?.isAdmin === true;
+  const isAuthorized = isSuperAdmin || isAdminFlag;
+
+  const isLoading =
+    userLoading || (!!user && !isSuperAdmin && (!firestore || profileLoading));
 
   useEffect(() => {
-    // Only redirect if loading is finished AND we're sure the user is not authorized
-    if (!isLoading) {
-      // If user is not logged in, redirect to home
-      if (!user) {
-        router.replace('/');
-        return;
-      }
-      // If user is logged in but is NOT the super admin, redirect to home
-      if (!isSuperAdmin) {
-        router.replace('/');
-      }
+    if (isLoading) return;
+    if (!user) {
+      router.replace('/');
+      return;
     }
-  }, [isLoading, isSuperAdmin, router, user]);
+    if (!isAuthorized) {
+      router.replace('/');
+    }
+  }, [isLoading, isAuthorized, router, user]);
 
 
   // While we are verifying the user's authentication state and admin role,

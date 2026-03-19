@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import type { PlayerSelectionStats } from '@/lib/types';
+import type { IPLMatchSelection, PlayerSelectionStats } from '@/lib/types';
 
 const COLLECTION = 'player_selection_stats';
 
@@ -138,4 +138,75 @@ export async function updateSelectionPercentagesForMatch(
       console.error('updateSelectionPercentagesForMatch', e);
     });
   }
+}
+
+function rolePlayerIdsFromLocked(raw: IPLMatchSelection | string | undefined | null): string[] {
+  if (raw == null || raw === '') return [];
+  if (typeof raw === 'string') return [raw];
+  const o = raw as IPLMatchSelection;
+  const ids: string[] = [];
+  if (o.batsmanId) ids.push(o.batsmanId);
+  if (o.bowlerId) ids.push(o.bowlerId);
+  if (o.allRounderId) ids.push(o.allRounderId);
+  if (o.captainId) ids.push(o.captainId);
+  if (o.emergingPlayerId) ids.push(o.emergingPlayerId);
+  return ids;
+}
+
+/**
+ * Admin: rebuild player_selection_stats for a match from ipl_user_picks locked selections.
+ * Counts each role pick (same user can count a player twice if picked in two roles).
+ */
+export async function adminResyncSelectionStatsFromIPLPicks(
+  firestore: Firestore,
+  matchId: string,
+  tournamentId: string
+): Promise<{ totalUsers: number; playerCount: number }> {
+  const { getIPLUserPicksByTournament } = await import('./ipl-user-picks');
+  const picks = await getIPLUserPicksByTournament(firestore, tournamentId);
+  const totalUsers = picks.filter((p) => {
+    const raw = p.matchSelections?.[matchId];
+    return raw != null && raw !== '';
+  }).length;
+
+  const counts = new Map<string, number>();
+  for (const pick of picks) {
+    const raw = pick.matchSelections?.[matchId];
+    if (raw == null || raw === '') continue;
+    for (const pid of rolePlayerIdsFromLocked(raw)) {
+      counts.set(pid, (counts.get(pid) ?? 0) + 1);
+    }
+  }
+
+  if (totalUsers <= 0) {
+    return { totalUsers: 0, playerCount: 0 };
+  }
+
+  const { deleteDoc } = await import('firebase/firestore');
+  const existing = await getSelectionStatsForMatch(firestore, matchId);
+  const newKeys = new Set(counts.keys());
+  for (const s of existing) {
+    if (!newKeys.has(s.playerId)) {
+      await deleteDoc(doc(firestore, COLLECTION, s.id)).catch(() => {});
+    }
+  }
+
+  for (const [playerId, totalSelections] of counts) {
+    const pct = Math.round((totalSelections / totalUsers) * 10000) / 100;
+    await setDoc(doc(firestore, COLLECTION, docId(matchId, playerId)), {
+      matchId,
+      playerId,
+      totalSelections,
+      selectionPercentage: pct,
+    }).catch((serverError) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: doc(firestore, COLLECTION, docId(matchId, playerId)).path,
+        operation: 'write',
+        requestResourceData: {},
+      }));
+      throw serverError;
+    });
+  }
+
+  return { totalUsers, playerCount: counts.size };
 }

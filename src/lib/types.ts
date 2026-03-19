@@ -882,6 +882,8 @@ export type PlayerMatchStats = {
   economy?: number;
   /** Overs bowled (optional; economy can be set directly). */
   overs?: number;
+  /** Fielding (optional; for display / future scoring). */
+  catches?: number;
 };
 
 /** Locked selection per role for one match (multi-role). */

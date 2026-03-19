@@ -6,6 +6,7 @@ import {
   doc,
   getDocs,
   getDoc,
+  setDoc,
   query,
   where,
   type Firestore,
@@ -30,7 +31,12 @@ function toStat(d: { id: string; data: () => Record<string, unknown> }): PlayerM
     isOut: (data.isOut as boolean) ?? false,
     economy: (data.economy as number) ?? undefined,
     overs: (data.overs as number) ?? undefined,
+    catches: (data.catches as number) ?? undefined,
   };
+}
+
+function statDocId(matchId: string, playerId: string): string {
+  return `${matchId}_${playerId}`;
 }
 
 export async function getStatsByMatch(
@@ -85,4 +91,36 @@ export async function setPlayerMatchStats(
     throw serverError;
   });
   return ref.id;
+}
+
+/**
+ * Admin: create or overwrite stats for match+player (deterministic doc id).
+ */
+export async function upsertPlayerMatchStats(
+  firestore: Firestore,
+  data: Omit<PlayerMatchStats, 'id'>
+): Promise<void> {
+  const id = statDocId(data.matchId, data.playerId);
+  const ref = doc(firestore, COLLECTION, id);
+  const docToSave: Record<string, unknown> = {
+    matchId: data.matchId,
+    playerId: data.playerId,
+    runs: data.runs,
+    fours: data.fours,
+    sixes: data.sixes,
+    strikeRate: data.strikeRate,
+    wickets: data.wickets,
+    isOut: data.isOut,
+  };
+  if (data.economy != null) docToSave.economy = data.economy;
+  if (data.overs != null) docToSave.overs = data.overs;
+  if (data.catches != null) docToSave.catches = data.catches;
+  await setDoc(ref, docToSave).catch((serverError) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'write',
+      requestResourceData: docToSave,
+    }));
+    throw serverError;
+  });
 }
