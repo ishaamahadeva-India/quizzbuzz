@@ -1,6 +1,6 @@
 /**
- * Programmatic IPL-style schedule: 10 teams, double round-robin (~90 league matches)
- * + 4 playoff matches. Dates: weekdays 1 match 7:30 PM IST, weekends 2 matches 3:30 PM & 7:30 PM IST.
+ * IPL schedule: official first phase (BCCI announced) + optional programmatic full season.
+ * Official IPL 2026 first phase: 20 matches, 28-Mar–12-Apr 2026 (source: BCCI / iplt20.com / ESPN Cricinfo).
  */
 
 export const IPL_SCHEDULE_TEAMS = [
@@ -18,6 +18,30 @@ export const IPL_SCHEDULE_TEAMS = [
 
 /** IST offset: 7:30 PM IST = 14:00 UTC, 3:30 PM IST = 10:00 UTC */
 const IST_UTC_OFFSET_HOURS = 5.5;
+
+/** Official IPL 2026 first phase (BCCI announced). 20 matches, 28 Mar – 12 Apr 2026. Source: ESPN Cricinfo / iplt20.com */
+const IPL_2026_OFFICIAL_FIRST_PHASE: { date: string; teamA: string; teamB: string; istTime: '15:30' | '19:30' }[] = [
+  { date: '2026-03-28', teamA: 'Royal Challengers Bangalore', teamB: 'Sunrisers Hyderabad', istTime: '19:30' },
+  { date: '2026-03-29', teamA: 'Mumbai Indians', teamB: 'Kolkata Knight Riders', istTime: '19:30' },
+  { date: '2026-03-30', teamA: 'Rajasthan Royals', teamB: 'Chennai Super Kings', istTime: '19:30' },
+  { date: '2026-03-31', teamA: 'Punjab Kings', teamB: 'Gujarat Titans', istTime: '19:30' },
+  { date: '2026-04-01', teamA: 'Lucknow Super Giants', teamB: 'Delhi Capitals', istTime: '19:30' },
+  { date: '2026-04-02', teamA: 'Kolkata Knight Riders', teamB: 'Sunrisers Hyderabad', istTime: '19:30' },
+  { date: '2026-04-03', teamA: 'Chennai Super Kings', teamB: 'Punjab Kings', istTime: '19:30' },
+  { date: '2026-04-04', teamA: 'Delhi Capitals', teamB: 'Mumbai Indians', istTime: '15:30' },
+  { date: '2026-04-04', teamA: 'Gujarat Titans', teamB: 'Rajasthan Royals', istTime: '19:30' },
+  { date: '2026-04-05', teamA: 'Sunrisers Hyderabad', teamB: 'Lucknow Super Giants', istTime: '15:30' },
+  { date: '2026-04-05', teamA: 'Royal Challengers Bangalore', teamB: 'Chennai Super Kings', istTime: '19:30' },
+  { date: '2026-04-06', teamA: 'Kolkata Knight Riders', teamB: 'Punjab Kings', istTime: '19:30' },
+  { date: '2026-04-07', teamA: 'Rajasthan Royals', teamB: 'Mumbai Indians', istTime: '19:30' },
+  { date: '2026-04-08', teamA: 'Delhi Capitals', teamB: 'Gujarat Titans', istTime: '19:30' },
+  { date: '2026-04-09', teamA: 'Kolkata Knight Riders', teamB: 'Lucknow Super Giants', istTime: '19:30' },
+  { date: '2026-04-10', teamA: 'Rajasthan Royals', teamB: 'Royal Challengers Bangalore', istTime: '19:30' },
+  { date: '2026-04-11', teamA: 'Punjab Kings', teamB: 'Sunrisers Hyderabad', istTime: '15:30' },
+  { date: '2026-04-11', teamA: 'Chennai Super Kings', teamB: 'Delhi Capitals', istTime: '19:30' },
+  { date: '2026-04-12', teamA: 'Lucknow Super Giants', teamB: 'Gujarat Titans', istTime: '15:30' },
+  { date: '2026-04-12', teamA: 'Mumbai Indians', teamB: 'Royal Challengers Bangalore', istTime: '19:30' },
+];
 
 function toUTCHours(istHour: number, istMinute: number): { h: number; m: number } {
   const totalMinutes = istHour * 60 + istMinute - IST_UTC_OFFSET_HOURS * 60;
@@ -58,7 +82,7 @@ function generateLeagueFixtures(teams: readonly string[]): { teamA: string; team
 
 /**
  * Assign dates to league matches.
- * Start date: 2026-03-22.
+ * Start date: 2026-03-28 (IPL 2026 opening).
  * Weekdays: 1 match at 7:30 PM IST.
  * Weekends (Sat/Sun): 2 matches — 3:30 PM IST, 7:30 PM IST.
  */
@@ -164,18 +188,46 @@ function addPlayoffs(
 }
 
 export type GenerateIPLScheduleOptions = {
-  startDate?: string; // YYYY-MM-DD, default 2026-03-22
+  startDate?: string; // YYYY-MM-DD, default 2026-03-28
   teams?: readonly string[];
   includePlayoffs?: boolean; // default true
+  /** Use BCCI-announced first phase only (20 matches, 28 Mar–12 Apr 2026). Default true. */
+  useOfficialFirstPhase?: boolean; // default true
 };
 
 /**
- * Generate full IPL schedule: league (double round-robin) + playoffs.
- * No duplicate matchKeys (each fixture + time is unique).
+ * Official IPL 2026 first phase: 20 matches (BCCI announced). Source: iplt20.com / ESPN Cricinfo.
+ */
+export function getIPL2026OfficialFirstPhase(): ScheduleMatchInput[] {
+  const result: ScheduleMatchInput[] = [];
+  for (const m of IPL_2026_OFFICIAL_FIRST_PHASE) {
+    const [y, mo, d] = m.date.split('-').map(Number);
+    const [h, min] = m.istTime.split(':').map(Number);
+    const { h: uh, m: um } = toUTCHours(h, min);
+    const matchStartTime = new Date(Date.UTC(y, mo - 1, d, uh, um, 0, 0));
+    result.push({
+      teamA: m.teamA,
+      teamB: m.teamB,
+      matchStartTime,
+      status: 'upcoming',
+      matchKey: buildMatchKey(m.teamA, m.teamB, matchStartTime),
+    });
+  }
+  return result;
+}
+
+/**
+ * Generate IPL schedule. When useOfficialFirstPhase is true (default), returns BCCI-announced
+ * first phase (20 matches). Otherwise returns full programmatic league + playoffs.
  */
 export function generateIPLSchedule(options: GenerateIPLScheduleOptions = {}): ScheduleMatchInput[] {
+  const useOfficial = options.useOfficialFirstPhase !== false;
+  if (useOfficial) {
+    return getIPL2026OfficialFirstPhase();
+  }
+
   const teams = options.teams ?? IPL_SCHEDULE_TEAMS;
-  const [y, mo, d] = (options.startDate ?? '2026-03-22').split('-').map(Number);
+  const [y, mo, d] = (options.startDate ?? '2026-03-28').split('-').map(Number);
   const includePlayoffs = options.includePlayoffs !== false;
 
   const fixtures = generateLeagueFixtures(teams);

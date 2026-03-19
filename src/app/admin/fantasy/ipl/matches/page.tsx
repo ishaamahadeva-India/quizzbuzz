@@ -24,6 +24,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   addIPLMatch,
   deleteIPLMatch,
@@ -60,6 +61,9 @@ export default function AdminIPLMatchesPage() {
   const [formWinner, setFormWinner] = useState('');
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [useOfficialFirstPhase, setUseOfficialFirstPhase] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deletingBulk, setDeletingBulk] = useState(false);
 
   const load = async () => {
     if (!firestore) return;
@@ -80,6 +84,20 @@ export default function AdminIPLMatchesPage() {
     if (statusFilter === 'all') return matches;
     return matches.filter((m) => m.status === statusFilter);
   }, [matches, statusFilter]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const selectAllFiltered = () => setSelectedIds(new Set(filtered.map((m) => m.id)));
+  const clearSelection = () => setSelectedIds(new Set());
+  const isAllFilteredSelected =
+    filtered.length > 0 && filtered.every((m) => selectedIds.has(m.id));
+  const isSomeFilteredSelected = filtered.some((m) => selectedIds.has(m.id));
 
   const openCreate = () => {
     setFormTeamA('');
@@ -175,6 +193,36 @@ export default function AdminIPLMatchesPage() {
     }
   };
 
+  const deleteSelected = async () => {
+    if (!firestore || selectedIds.size === 0) return;
+    setDeletingBulk(true);
+    try {
+      let done = 0;
+      for (const id of selectedIds) {
+        try {
+          await deleteIPLMatch(firestore, id);
+          done++;
+        } catch (e) {
+          console.error('Delete match failed', id, e);
+        }
+      }
+      toast({
+        title: 'Bulk delete',
+        description: `${done} of ${selectedIds.size} match(es) deleted.`,
+      });
+      setSelectedIds(new Set());
+      await load();
+    } catch (e) {
+      toast({
+        variant: 'destructive',
+        title: 'Bulk delete failed',
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setDeletingBulk(false);
+    }
+  };
+
   const generateFullSchedule = async () => {
     if (!firestore) return;
     setGenerating(true);
@@ -186,7 +234,10 @@ export default function AdminIPLMatchesPage() {
         cricketInserted,
         cricketSkipped,
         cricketErrors,
-      } = await insertGeneratedIPLSchedule(firestore, { startDate: '2026-03-22' });
+      } = await insertGeneratedIPLSchedule(firestore, {
+        startDate: '2026-03-28',
+        useOfficialFirstPhase,
+      });
       const hasErrors = errors.length > 0 || cricketErrors.length > 0;
       const parts = [
         `IPL (pick'em): ${inserted} added, ${skipped} skipped`,
@@ -249,23 +300,65 @@ export default function AdminIPLMatchesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarPlus className="w-5 h-5" />
-            Generate full IPL schedule
+            Generate IPL schedule
           </CardTitle>
           <CardDescription>
-            10 teams, double round-robin (~90 league) + 4 playoffs. Start 2026-03-22. Creates matches in both IPL Fantasy (pick&apos;em) and Cricket Fantasy (T20/IPL) so users can join unified IPL or individual matches. Duplicates skipped.
+            By default uses <strong>official IPL 2026 first phase</strong> (20 matches, 28 Mar–12 Apr, BCCI announced). Creates matches in both IPL Fantasy and Cricket Fantasy. Uncheck for full programmatic season (90 league + 4 playoffs). Duplicates skipped.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <Checkbox
+              checked={useOfficialFirstPhase}
+              onCheckedChange={(v) => setUseOfficialFirstPhase(v === true)}
+            />
+            <span className="text-sm">Official first phase only (20 matches, 28 Mar–12 Apr 2026)</span>
+          </label>
           <Button onClick={generateFullSchedule} disabled={!firestore || generating}>
-            {generating ? 'Generating…' : 'Generate Full IPL Schedule'}
+            {generating ? 'Generating…' : useOfficialFirstPhase ? 'Generate official schedule (20 matches)' : 'Generate full programmatic schedule'}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Match list</CardTitle>
-          <CardDescription>Sorted by start time (newest first)</CardDescription>
+        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle>Match list</CardTitle>
+            <CardDescription>Sorted by start time (newest first). Select rows then delete selected.</CardDescription>
+          </div>
+          {filtered.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => (isAllFilteredSelected ? clearSelection() : selectAllFiltered())}
+              >
+                {isAllFilteredSelected ? 'Clear selection' : 'Select all'}
+              </Button>
+              {selectedIds.size > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button type="button" variant="destructive" size="sm" disabled={deletingBulk}>
+                      {deletingBulk ? 'Deleting…' : `Delete selected (${selectedIds.size})`}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete {selectedIds.size} match(es)?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This removes the match documents from IPL Fantasy. User picks and stats for these matches are not auto-deleted. You can then generate a fresh schedule.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={deleteSelected}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -281,6 +374,13 @@ export default function AdminIPLMatchesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
+                    <th className="w-10 pb-2 pr-2">
+                      <Checkbox
+                        checked={isAllFilteredSelected ? true : isSomeFilteredSelected ? 'indeterminate' : false}
+                        onCheckedChange={() => (isAllFilteredSelected ? clearSelection() : selectAllFiltered())}
+                        aria-label="Select all"
+                      />
+                    </th>
                     <th className="pb-2 pr-4">Teams</th>
                     <th className="pb-2 pr-4">Start</th>
                     <th className="pb-2 pr-4">Status</th>
@@ -294,6 +394,13 @@ export default function AdminIPLMatchesPage() {
                     const when = sec ? new Date(sec * 1000).toLocaleString() : '—';
                     return (
                       <tr key={m.id} className="border-b border-border/60">
+                        <td className="w-10 py-3 pr-2">
+                          <Checkbox
+                            checked={selectedIds.has(m.id)}
+                            onCheckedChange={() => toggleSelect(m.id)}
+                            aria-label={`Select ${m.teamA} vs ${m.teamB}`}
+                          />
+                        </td>
                         <td className="py-3 pr-4 font-medium">
                           {m.teamA} vs {m.teamB}
                         </td>

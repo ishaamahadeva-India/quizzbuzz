@@ -208,7 +208,7 @@ export type InsertGeneratedScheduleResult = {
  */
 export async function insertGeneratedIPLSchedule(
   firestore: Firestore,
-  options?: { startDate?: string }
+  options?: { startDate?: string; useOfficialFirstPhase?: boolean }
 ): Promise<InsertGeneratedScheduleResult> {
   const { addCricketMatch, getExistingCricketMatchIPLKeys } = await import('./cricket-matches');
   const { generateIPLSchedule } = await import('@/lib/ipl-schedule-generator');
@@ -217,8 +217,9 @@ export async function insertGeneratedIPLSchedule(
     getExistingCricketMatchIPLKeys(firestore),
   ]);
   const matches = generateIPLSchedule({
-    startDate: options?.startDate ?? '2026-03-22',
+    startDate: options?.startDate ?? '2026-03-28',
     includePlayoffs: true,
+    useOfficialFirstPhase: options?.useOfficialFirstPhase !== false,
   });
   let inserted = 0;
   let skipped = 0;
