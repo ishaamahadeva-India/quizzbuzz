@@ -36,7 +36,7 @@ export async function getIPLPlayers(firestore: Firestore): Promise<(IPLPlayer & 
   const col = collection(firestore, COLLECTION);
   const q = query(col, where('isActive', '==', true), orderBy('name'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => docToPlayer({ id: d.id, data: d.data() }));
+  return snapshot.docs.map((d) => docToPlayer({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }
 
 export async function getIPLPlayersByTeam(
@@ -46,7 +46,7 @@ export async function getIPLPlayersByTeam(
   const col = collection(firestore, COLLECTION);
   const q = query(col, where('team', '==', team), where('isActive', '==', true), orderBy('name'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => docToPlayer({ id: d.id, data: d.data() }));
+  return snapshot.docs.map((d) => docToPlayer({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }
 
 export async function getIPLPlayer(
@@ -56,7 +56,7 @@ export async function getIPLPlayer(
   const ref = doc(firestore, COLLECTION, playerId);
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) return null;
-  return docToPlayer({ id: snapshot.id, data: snapshot.data() });
+  return docToPlayer({ id: snapshot.id, data: () => snapshot.data() as Record<string, unknown> });
 }
 
 export async function addIPLPlayer(

@@ -36,7 +36,7 @@ export async function getIPLMatches(firestore: Firestore): Promise<(IPLMatch & {
   const col = collection(firestore, COLLECTION);
   const q = query(col, orderBy('matchStartTime', 'asc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => toMatch({ id: d.id, data: d.data() }));
+  return snapshot.docs.map((d) => toMatch({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }
 
 export async function getUpcomingIPLMatch(
@@ -50,7 +50,7 @@ export async function getUpcomingIPLMatch(
   );
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
-  return toMatch({ id: snapshot.docs[0].id, data: snapshot.docs[0].data() });
+  return toMatch({ id: snapshot.docs[0].id, data: () => snapshot.docs[0].data() as Record<string, unknown> });
 }
 
 export async function getIPLMatchesByStatus(
@@ -60,7 +60,7 @@ export async function getIPLMatchesByStatus(
   const col = collection(firestore, COLLECTION);
   const q = query(col, where('status', '==', status), orderBy('matchStartTime', 'asc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => toMatch({ id: d.id, data: d.data() }));
+  return snapshot.docs.map((d) => toMatch({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }
 
 export async function getIPLMatch(
@@ -70,7 +70,7 @@ export async function getIPLMatch(
   const ref = doc(firestore, COLLECTION, matchId);
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) return null;
-  return toMatch({ id: snapshot.id, data: snapshot.data() });
+  return toMatch({ id: snapshot.id, data: () => snapshot.data() as Record<string, unknown> });
 }
 
 export async function addIPLMatch(

@@ -41,7 +41,7 @@ export async function getSelectionStatsForMatch(
   const col = collection(firestore, COLLECTION);
   const q = query(col, where('matchId', '==', matchId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => toStat({ id: d.id, data: d.data() }));
+  return snapshot.docs.map((d) => toStat({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }
 
 export async function getSelectionStat(
@@ -52,7 +52,7 @@ export async function getSelectionStat(
   const ref = doc(firestore, COLLECTION, docId(matchId, playerId));
   const snapshot = await getDoc(ref);
   if (!snapshot.exists()) return null;
-  return toStat({ id: snapshot.id, data: snapshot.data() });
+  return toStat({ id: snapshot.id, data: () => snapshot.data() as Record<string, unknown> });
 }
 
 /**

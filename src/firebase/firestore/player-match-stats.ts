@@ -40,7 +40,7 @@ export async function getStatsByMatch(
   const col = collection(firestore, COLLECTION);
   const q = query(col, where('matchId', '==', matchId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => toStat({ id: d.id, data: d.data() }));
+  return snapshot.docs.map((d) => toStat({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }
 
 export async function getStatByMatchAndPlayer(
@@ -56,7 +56,7 @@ export async function getStatByMatchAndPlayer(
   );
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
-  return toStat({ id: snapshot.docs[0].id, data: snapshot.docs[0].data() });
+  return toStat({ id: snapshot.docs[0].id, data: () => snapshot.docs[0].data() as Record<string, unknown> });
 }
 
 export async function setPlayerMatchStats(

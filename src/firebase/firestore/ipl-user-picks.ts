@@ -85,7 +85,7 @@ export async function getIPLUserPick(
   );
   const snapshot = await getDocs(q);
   if (snapshot.empty) return null;
-  return toPick({ id: snapshot.docs[0].id, data: snapshot.docs[0].data() });
+  return toPick({ id: snapshot.docs[0].id, data: () => snapshot.docs[0].data() as Record<string, unknown> });
 }
 
 /**
@@ -108,7 +108,7 @@ export function subscribeIPLUserPick(
       onData(null);
       return;
     }
-    onData(toPick({ id: snapshot.docs[0].id, data: snapshot.docs[0].data() }));
+    onData(toPick({ id: snapshot.docs[0].id, data: () => snapshot.docs[0].data() as Record<string, unknown> }));
   });
 }
 
@@ -391,7 +391,7 @@ export async function getIPLUserPicksByTournament(
   const col = collection(firestore, COLLECTION);
   const q = query(col, where('tournamentId', '==', tournamentId));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((d) => toPick({ id: d.id, data: d.data() }));
+  return snapshot.docs.map((d) => toPick({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }
 
 /**
@@ -405,7 +405,7 @@ export function subscribeIPLLeaderboard(
   const col = collection(firestore, COLLECTION);
   const q = query(col, where('tournamentId', '==', tournamentId));
   return onSnapshot(q, (snapshot) => {
-    onData(snapshot.docs.map((d) => toPick({ id: d.id, data: d.data() })));
+    onData(snapshot.docs.map((d) => toPick({ id: d.id, data: () => d.data() as Record<string, unknown> })));
   });
 }
 
