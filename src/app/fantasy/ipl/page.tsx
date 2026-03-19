@@ -27,6 +27,9 @@ export default function IPLFantasyHubPage() {
   const matchStartTime = match?.matchStartTime && 'seconds' in match.matchStartTime
     ? new Date(match.matchStartTime.seconds * 1000)
     : null;
+  const matchDateIST = matchStartTime
+    ? matchStartTime.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })
+    : null;
 
   return (
     <div className="container max-w-4xl mx-auto px-4 py-8 space-y-8">
@@ -60,10 +63,11 @@ export default function IPLFantasyHubPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {matchStartTime && (
+            {(matchDateIST ?? matchStartTime) && (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calendar className="w-5 h-5" />
-                <span>{matchStartTime.toLocaleString()}</span>
+                <span>{matchDateIST ?? matchStartTime?.toLocaleString()}</span>
+                {matchDateIST && <span className="text-xs">(IST)</span>}
               </div>
             )}
             <p className="text-sm text-muted-foreground">

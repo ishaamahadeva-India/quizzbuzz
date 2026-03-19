@@ -40,18 +40,22 @@ export async function getIPLMatches(firestore: Firestore): Promise<(IPLMatch & {
   return snapshot.docs.map((d) => toMatch({ id: d.id, data: () => d.data() as Record<string, unknown> }));
 }
 
+/** Get timestamp in ms for ordering (handles Firestore Timestamp or Date). */
+function matchStartTimeMs(m: IPLMatch & { id: string }): number {
+  const t = m.matchStartTime;
+  if (!t) return 0;
+  if (typeof (t as { seconds: number }).seconds === 'number') return (t as { seconds: number }).seconds * 1000;
+  if (t instanceof Date) return t.getTime();
+  return 0;
+}
+
 export async function getUpcomingIPLMatch(
   firestore: Firestore
 ): Promise<(IPLMatch & { id: string }) | null> {
-  const col = collection(firestore, COLLECTION);
-  const q = query(
-    col,
-    where('status', '==', 'upcoming'),
-    orderBy('matchStartTime', 'asc')
-  );
-  const snapshot = await getDocs(q);
-  if (snapshot.empty) return null;
-  return toMatch({ id: snapshot.docs[0].id, data: () => snapshot.docs[0].data() as Record<string, unknown> });
+  const all = await getIPLMatchesByStatus(firestore, 'upcoming');
+  if (all.length === 0) return null;
+  const sorted = [...all].sort((a, b) => matchStartTimeMs(a) - matchStartTimeMs(b));
+  return sorted[0];
 }
 
 export async function getIPLMatchesByStatus(

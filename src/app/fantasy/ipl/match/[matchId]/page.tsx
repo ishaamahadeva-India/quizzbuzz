@@ -88,58 +88,66 @@ export default function IPLMatchSelectPage() {
   });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!firestore || !matchId) return;
+    setLoadError(null);
     (async () => {
-      const [m, picks] = await Promise.all([
-        getIPLMatch(firestore, matchId),
-        getIPLUserPicksByTournament(firestore, TOURNAMENT_ID),
-      ]);
-      setMatch(m);
-      setTotalUsers(picks.length);
-      if (!m) {
-        setLoading(false);
-        return;
-      }
-      const [teamAPlayers, teamBPlayers, selectionStats] = await Promise.all([
-        getIPLPlayersByTeam(firestore, m.teamA),
-        getIPLPlayersByTeam(firestore, m.teamB),
-        getSelectionStatsForMatch(firestore, matchId),
-      ]);
-      const allPlayers = [...teamAPlayers, ...teamBPlayers];
-      const totalUsersInMatch = picks.length || 1;
-      const selectionMap = new Map(
-        selectionStats.map((s) => [
-          s.playerId,
-          totalUsersInMatch > 0 ? (s.totalSelections / totalUsersInMatch) * 100 : 0,
-        ])
-      );
-      setPlayers(
-        allPlayers.map((p) => ({
-          id: p.id,
-          name: p.name,
-          team: p.team,
-          role: p.role,
-          isEmerging: p.isEmerging,
-          selectionPercentage: Math.round((selectionMap.get(p.id) ?? 0) * 100) / 100,
-          multiplier: getMultiplierFromSelectionPercentage(selectionMap.get(p.id) ?? 0),
-        }))
-      );
-      if (user) {
-        const userPick = await getIPLUserPick(firestore, TOURNAMENT_ID, user.uid);
-        setPick(userPick);
-        if (userPick) {
-          setSelectedByRole({
-            batsman: userPick.currentBatsmanId || null,
-            bowler: userPick.bowlerId ?? null,
-            allRounder: userPick.allRounderId ?? null,
-            captain: userPick.captainId ?? null,
-            emerging: userPick.emergingPlayerId ?? null,
-          });
+      try {
+        const [m, picks] = await Promise.all([
+          getIPLMatch(firestore, matchId),
+          getIPLUserPicksByTournament(firestore, TOURNAMENT_ID),
+        ]);
+        setMatch(m);
+        setTotalUsers(picks.length);
+        if (!m) {
+          setLoading(false);
+          return;
         }
+        const [teamAPlayers, teamBPlayers, selectionStats] = await Promise.all([
+          getIPLPlayersByTeam(firestore, m.teamA),
+          getIPLPlayersByTeam(firestore, m.teamB),
+          getSelectionStatsForMatch(firestore, matchId),
+        ]);
+        const allPlayers = [...teamAPlayers, ...teamBPlayers];
+        const totalUsersInMatch = picks.length || 1;
+        const selectionMap = new Map(
+          selectionStats.map((s) => [
+            s.playerId,
+            totalUsersInMatch > 0 ? (s.totalSelections / totalUsersInMatch) * 100 : 0,
+          ])
+        );
+        setPlayers(
+          allPlayers.map((p) => ({
+            id: p.id,
+            name: p.name,
+            team: p.team,
+            role: p.role,
+            isEmerging: p.isEmerging,
+            selectionPercentage: Math.round((selectionMap.get(p.id) ?? 0) * 100) / 100,
+            multiplier: getMultiplierFromSelectionPercentage(selectionMap.get(p.id) ?? 0),
+          }))
+        );
+        if (user) {
+          const userPick = await getIPLUserPick(firestore, TOURNAMENT_ID, user.uid);
+          setPick(userPick);
+          if (userPick) {
+            setSelectedByRole({
+              batsman: userPick.currentBatsmanId || null,
+              bowler: userPick.bowlerId ?? null,
+              allRounder: userPick.allRounderId ?? null,
+              captain: userPick.captainId ?? null,
+              emerging: userPick.emergingPlayerId ?? null,
+            });
+          }
+        }
+      } catch (err) {
+        console.error('IPL match select load error', err);
+        setLoadError(err instanceof Error ? err.message : 'Failed to load players');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
   }, [firestore, matchId, user?.uid]);
 
@@ -336,13 +344,25 @@ export default function IPLMatchSelectPage() {
             </Button>
           </CardContent>
         </Card>
+      ) : loadError ? (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="py-8 text-center">
+            <p className="font-medium text-foreground">Could not load players</p>
+            <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">{loadError}</p>
+            <p className="text-xs text-muted-foreground mt-2">Check the browser console. If Firestore index is missing, create the suggested index and retry.</p>
+            <Button asChild className="mt-4" variant="outline">
+              <Link href="/fantasy/ipl">Back to IPL Fantasy</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : players.length === 0 ? (
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="py-8 text-center">
             <p className="font-medium text-foreground">No players available for this match</p>
             <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-              Roster for {match.teamA} and {match.teamB} is not loaded yet. An admin must seed IPL players
-              (Admin → IPL Fantasy → Players → &quot;Seed IPL 2026 players&quot;) so you can pick your team.
+              Roster for <strong>{match.teamA}</strong> and <strong>{match.teamB}</strong> returned no players.
+              Ensure players are seeded (Admin → IPL Fantasy → Players → &quot;Seed IPL 2026 players&quot;) and that
+              <strong> team names match exactly</strong> (e.g. &quot;Mumbai Indians&quot;, &quot;Royal Challengers Bangalore&quot;) between matches and player records.
             </p>
             <Button asChild className="mt-4" variant="outline">
               <Link href="/fantasy/ipl">Back to IPL Fantasy</Link>
