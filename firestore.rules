@@ -101,9 +101,14 @@ service cloud.firestore {
       }
     }
 
+    // Fantasy Matches: public read so list works before auth / without login; write admin only
     match /fantasy_matches/{matchId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
+      match /events/{eventId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
     }
 
     // Cricket Tournaments: public read so list works without login; write admin only
@@ -248,6 +253,31 @@ service cloud.firestore {
       allow read: if isAuthenticated() &&
                     (resource.data.userId == request.auth.uid || isAdmin());
       allow update, delete: if isAdmin();
+    }
+
+    // IPL Fantasy Engine
+    match /ipl_players/{playerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /ipl_matches/{matchId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /player_match_stats/{statId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /player_selection_stats/{statId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+    match /ipl_user_picks/{pickId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin();
     }
 
     match /{document=**} {

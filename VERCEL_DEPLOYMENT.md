@@ -2,6 +2,8 @@
 
 This guide will help you deploy your Fantasy application to Vercel.
 
+**Vercel account:** zaadakart@gmail.com
+
 ## Prerequisites
 
 1. **GitHub Repository**: Your code should be pushed to GitHub (✅ Already done)
@@ -210,6 +212,26 @@ vercel --prod
 4. ✅ Set up Firebase security rules for production
 5. ✅ Review and optimize performance
 6. ✅ Set up backups (Firestore)
+
+---
+
+## Troubleshooting: "Could not retrieve Project Settings"
+
+This happens when `.vercel` was linked to a **different Vercel account or team** than the one you use now (e.g. after `vercel login` with **zaadakart@gmail.com**).
+
+**Fix:**
+
+1. Remove the old link (`.vercel` is gitignored and safe to delete):
+   ```bash
+   rm -rf .vercel
+   ```
+2. Deploy again and pick the correct project when prompted:
+   ```bash
+   vercel --prod
+   ```
+3. If you have **2–3 projects** on Vercel, choose **Link to existing project** and select the one that matches this app (e.g. moviematters / quizzbuzz / fantasy). Or create a new project if you want a fresh deployment.
+
+After linking, future `vercel --prod` runs use your account and that project.
 
 ---
 

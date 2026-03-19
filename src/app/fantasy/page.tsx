@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { ArrowRight, Film, Shield } from 'lucide-react';
+import { ArrowRight, Film, Shield, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { FantasyOnboarding } from '@/components/fantasy/fantasy-onboarding';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,7 +19,23 @@ function FantasyHub() {
                 </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <Link href="/fantasy/ipl" className="group">
+                    <Card className="flex flex-col items-center justify-center p-8 text-center transition-all duration-300 ease-in-out h-full group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:border-primary/20">
+                        <div className="p-4 bg-primary/10 rounded-full mb-4">
+                            <Trophy className="w-12 h-12 text-primary" />
+                        </div>
+                        <h2 className="text-3xl font-bold font-headline mt-4">IPL Fantasy</h2>
+                        <ul className="mt-4 space-y-2 text-muted-foreground text-left list-disc list-inside">
+                            <li>Pick a batsman per match</li>
+                            <li>Multipliers for underrated picks</li>
+                            <li>Real-time leaderboard</li>
+                        </ul>
+                        <Button asChild className="mt-8" variant="outline">
+                            <div>Choose Game <ArrowRight className="w-4 h-4 ml-2" /></div>
+                        </Button>
+                    </Card>
+                </Link>
                 <Link href="/fantasy/cricket" className="group">
                     <Card className="flex flex-col items-center justify-center p-8 text-center transition-all duration-300 ease-in-out h-full group-hover:shadow-lg group-hover:shadow-primary/10 group-hover:border-primary/20">
                         <div className="p-4 bg-primary/10 rounded-full mb-4">

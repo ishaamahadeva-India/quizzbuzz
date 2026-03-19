@@ -841,3 +841,128 @@ export type ImageAdSponsor = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+// ========== IPL Fantasy Engine Types ==========
+
+export type IPLPlayerRole = 'batsman' | 'bowler' | 'allrounder';
+
+export type IPLPlayer = {
+  id: string;
+  name: string;
+  team: string;
+  role: IPLPlayerRole;
+  isActive: boolean;
+  /** Eligible for Emerging Player slot; gets 1.5x points in that slot. */
+  isEmerging?: boolean;
+};
+
+export type IPLMatchStatus = 'upcoming' | 'live' | 'completed';
+
+export type IPLMatch = {
+  id: string;
+  teamA: string;
+  teamB: string;
+  matchStartTime: Date | { seconds: number };
+  status: IPLMatchStatus;
+  /** Set when match is completed; used for Captain +20 team win bonus. */
+  winnerTeamId?: string;
+};
+
+export type PlayerMatchStats = {
+  id?: string;
+  matchId: string;
+  playerId: string;
+  runs: number;
+  fours: number;
+  sixes: number;
+  strikeRate: number;
+  wickets: number;
+  isOut: boolean;
+  /** Bowler economy (runs per over). Required for bowler point calculation. */
+  economy?: number;
+  /** Overs bowled (optional; economy can be set directly). */
+  overs?: number;
+};
+
+/** Locked selection per role for one match (multi-role). */
+export type IPLMatchSelection = {
+  batsmanId?: string;
+  bowlerId?: string;
+  allRounderId?: string;
+  captainId?: string;
+  emergingPlayerId?: string;
+  /** Player whose selection % drives the underrated multiplier for this match. */
+  underratedPlayerId?: string;
+  /** Penalty applied at lock time for role changes this session (-20 per role). */
+  switchPenalty?: number;
+};
+
+export type IPLUserPickHistoryEntry = {
+  matchId: string;
+  /** @deprecated Use batsmanId / role fields. Kept for backward compat. */
+  playerId?: string;
+  switched?: boolean;
+  penalty?: number;
+  /** Selection % of underrated player (for multiplier); backward compat default 0. */
+  selectionPercentage?: number;
+  /** Multiplier applied to base total; backward compat default 1. */
+  multiplier?: number;
+  basePoints?: number;
+  /** @deprecated Use totalMatchPoints. Kept for backward compat. */
+  finalPoints?: number;
+  /** Net points for this match = (baseTotal * multiplier) + switchPenalty. */
+  totalMatchPoints?: number;
+  /** Per-role base points (before multiplier). */
+  batsmanPoints?: number;
+  bowlerPoints?: number;
+  allRounderPoints?: number;
+  captainPoints?: number;
+  emergingPoints?: number;
+  /** Penalty stored for this match (-20 per role changed at lock). */
+  switchPenalty?: number;
+  batsmanId?: string;
+  bowlerId?: string;
+  allRounderId?: string;
+  captainId?: string;
+  emergingPlayerId?: string;
+};
+
+/** Role key for multi-role picks. */
+export type IPLTeamRole = 'batsman' | 'bowler' | 'allRounder' | 'captain' | 'emerging';
+
+export type IPLUserPick = {
+  id?: string;
+  userId: string;
+  tournamentId: string; // e.g. "ipl_2026"
+  /** Current batsman (legacy + primary). */
+  currentBatsmanId: string;
+  /** Other role picks (optional; null until user selects). */
+  bowlerId?: string | null;
+  allRounderId?: string | null;
+  captainId?: string | null;
+  emergingPlayerId?: string | null;
+  /** Player whose selection % drives underrated multiplier (default batsman). */
+  underratedPlayerId?: string | null;
+  /** Locked selection per match: matchId -> IPLMatchSelection (or legacy string = batsmanId only) */
+  matchSelections?: Record<string, IPLMatchSelection | string>;
+  totalPoints: number;
+  /** @deprecated Use per-role switch counts. Kept for backward compat. */
+  switchCount?: number;
+  switchCountBatsman?: number;
+  switchCountBowler?: number;
+  switchCountAllRounder?: number;
+  switchCountCaptain?: number;
+  switchCountEmerging?: number;
+  freeSwitchesLeft: number;
+  history: IPLUserPickHistoryEntry[];
+  createdAt: Date | { seconds: number };
+  updatedAt: Date | { seconds: number };
+};
+
+export type PlayerSelectionStats = {
+  id?: string;
+  matchId: string;
+  playerId: string;
+  totalSelections: number;
+  selectionPercentage: number;
+};
