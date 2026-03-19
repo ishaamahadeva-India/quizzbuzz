@@ -336,6 +336,19 @@ export default function IPLMatchSelectPage() {
             </Button>
           </CardContent>
         </Card>
+      ) : players.length === 0 ? (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardContent className="py-8 text-center">
+            <p className="font-medium text-foreground">No players available for this match</p>
+            <p className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
+              Roster for {match.teamA} and {match.teamB} is not loaded yet. An admin must seed IPL players
+              (Admin → IPL Fantasy → Players → &quot;Seed IPL 2026 players&quot;) so you can pick your team.
+            </p>
+            <Button asChild className="mt-4" variant="outline">
+              <Link href="/fantasy/ipl">Back to IPL Fantasy</Link>
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <>
           <Tabs defaultValue="batsman" className="w-full">
