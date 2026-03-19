@@ -31,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" data-scroll-behavior="smooth">
       <head>
         {/* Favicon and Icons */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -64,7 +64,9 @@ export default function RootLayout({
         />
         <meta name="theme-color" content="#E6C87A" />
         <meta name="google-adsense-account" content="ca-pub-7841158611461633" />
-        {/* Google AdSense */}
+      </head>
+      <body className="font-sans antialiased min-h-screen">
+        {/* Google AdSense: loaded in body to avoid "head tag doesn't support data-nscript" console error */}
         <Script
           id="adsense-init"
           async
@@ -72,8 +74,6 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
-      </head>
-      <body className="font-sans antialiased min-h-screen">
         <ErrorBoundary>
           <FirebaseClientProvider>
             <SplashScreen />
