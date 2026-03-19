@@ -113,3 +113,36 @@ export async function updateIPLPlayer(
     throw serverError;
   });
 }
+
+export type InsertSeedIPLPlayersResult = { inserted: number; skipped: number; errors: string[] };
+
+/** Insert seed players into ipl_players. Skips when name+team already exists. */
+export async function insertSeedIPLPlayers(firestore: Firestore): Promise<InsertSeedIPLPlayersResult> {
+  const existing = await getAllIPLPlayersForAdmin(firestore);
+  const keySet = new Set(existing.map((p) => `${p.name}|${p.team}`));
+  const { IPL_2026_PLAYERS_SEED } = await import('@/lib/ipl-players-seed');
+  let inserted = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+  for (const p of IPL_2026_PLAYERS_SEED) {
+    const key = `${p.name}|${p.team}`;
+    if (keySet.has(key)) {
+      skipped++;
+      continue;
+    }
+    try {
+      await addIPLPlayer(firestore, {
+        name: p.name,
+        team: p.team,
+        role: p.role,
+        isActive: p.isActive,
+        isEmerging: p.isEmerging,
+      });
+      inserted++;
+      keySet.add(key);
+    } catch (e) {
+      errors.push(`${p.name} (${p.team}): ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return { inserted, skipped, errors };
+}

@@ -28,10 +28,11 @@ import { Badge } from '@/components/ui/badge';
 import {
   addIPLPlayer,
   getAllIPLPlayersForAdmin,
+  insertSeedIPLPlayers,
   updateIPLPlayer,
 } from '@/firebase/firestore/ipl-players';
 import type { IPLPlayerRole } from '@/lib/types';
-import { ArrowLeft, Plus, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Pencil, Users } from 'lucide-react';
 
 export default function AdminIPLPlayersPage() {
   const firestore = useFirestore();
@@ -45,6 +46,7 @@ export default function AdminIPLPlayersPage() {
   const [isActive, setIsActive] = useState(true);
   const [isEmerging, setIsEmerging] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   const load = async () => {
     if (!firestore) return;
@@ -119,6 +121,35 @@ export default function AdminIPLPlayersPage() {
     }
   };
 
+  const seedPlayers = async () => {
+    if (!firestore) return;
+    setSeeding(true);
+    try {
+      const { inserted, skipped, errors } = await insertSeedIPLPlayers(firestore);
+      if (errors.length > 0) {
+        toast({
+          variant: 'destructive',
+          title: 'Seed completed with errors',
+          description: `${inserted} added, ${skipped} skipped. ${errors.length} error(s).`,
+        });
+      } else {
+        toast({
+          title: 'Seed completed',
+          description: `${inserted} player(s) added, ${skipped} already existed (skipped).`,
+        });
+      }
+      await load();
+    } catch (e) {
+      toast({
+        variant: 'destructive',
+        title: 'Seed failed',
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -137,6 +168,23 @@ export default function AdminIPLPlayersPage() {
           Add player
         </Button>
       </div>
+
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Seed IPL 2026 players
+          </CardTitle>
+          <CardDescription>
+            Bulk insert predefined squad (all 10 teams). Skips players that already exist (same name + team).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={seedPlayers} disabled={!firestore || seeding}>
+            {seeding ? 'Seeding…' : 'Seed IPL 2026 players'}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
